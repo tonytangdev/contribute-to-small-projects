@@ -36,27 +36,35 @@ export async function POST(request: NextRequest) {
     
     console.log('Starting GitHub repository fetch...')
     
-    // Fetch multiple pages to get more diverse repositories
-    const allRepositories: Repository[] = []
+    // Fetch multiple pages in parallel to get more diverse repositories
     const pagesToFetch = 5 // Fetch 5 pages = 500 repositories max
+    const pagePromises = []
     
+    console.log(`Fetching ${pagesToFetch} pages in parallel...`)
     for (let page = 1; page <= pagesToFetch; page++) {
-      console.log(`Fetching page ${page}...`)
-      const repositories = await githubClient.searchRepositories(100, 600, page)
+      pagePromises.push(githubClient.searchRepositories(100, 600, page))
+    }
+    
+    const pageResults = await Promise.all(pagePromises)
+    const allRepositories: Repository[] = []
+    
+    for (let i = 0; i < pageResults.length; i++) {
+      const repositories = pageResults[i]
+      console.log(`Page ${i + 1}: fetched ${repositories.length} repositories`)
       allRepositories.push(...repositories)
       
-      // If we get less than 100 repos, we've reached the end
+      // If we get less than 100 repos, we've reached the end of available results
       if (repositories.length < 100) {
-        console.log(`Reached end of results at page ${page}`)
-        break
+        console.log(`Reached end of results at page ${i + 1}`)
       }
     }
     
     console.log(`Fetched ${allRepositories.length} repositories from GitHub across ${Math.min(pagesToFetch, Math.ceil(allRepositories.length / 100))} pages`)
 
-    let upsertedCount = 0
-    for (const repo of allRepositories) {
-      await prisma.repository.upsert({
+    // Use parallel database operations for better performance
+    console.log(`Upserting ${allRepositories.length} repositories in parallel...`)
+    const upsertPromises = allRepositories.map(repo => 
+      prisma.repository.upsert({
         where: { githubUrl: repo.githubUrl },
         update: {
           description: repo.description,
@@ -76,8 +84,10 @@ export async function POST(request: NextRequest) {
           lastUpdated: repo.lastUpdated,
         },
       })
-      upsertedCount++
-    }
+    )
+    
+    await Promise.all(upsertPromises)
+    const upsertedCount = allRepositories.length
 
     console.log(`Successfully upserted ${upsertedCount} repositories`)
 
