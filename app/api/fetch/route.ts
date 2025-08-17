@@ -100,32 +100,38 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Use parallel database operations for better performance
-    console.log(`Upserting ${allRepositories.length} repositories in parallel...`)
-    const upsertPromises = allRepositories.map(repo => 
-      prisma.repository.upsert({
-        where: { githubUrl: repo.githubUrl },
-        update: {
-          description: repo.description,
-          language: repo.language,
-          stars: repo.stars,
-          contributors: repo.contributors,
-          lastUpdated: repo.lastUpdated,
-        },
-        create: {
-          name: repo.name,
-          owner: repo.owner,
-          description: repo.description,
-          language: repo.language,
-          stars: repo.stars,
-          contributors: repo.contributors,
-          githubUrl: repo.githubUrl,
-          lastUpdated: repo.lastUpdated,
-        },
-      })
-    )
+    // Use batched database operations to avoid connection pool timeout
+    console.log(`Upserting ${allRepositories.length} repositories in batches...`)
+    const batchSize = 3 // Stay well under the 5 connection limit
     
-    await Promise.all(upsertPromises)
+    for (let i = 0; i < allRepositories.length; i += batchSize) {
+      const batch = allRepositories.slice(i, i + batchSize)
+      const upsertPromises = batch.map(repo => 
+        prisma.repository.upsert({
+          where: { githubUrl: repo.githubUrl },
+          update: {
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stars,
+            contributors: repo.contributors,
+            lastUpdated: repo.lastUpdated,
+          },
+          create: {
+            name: repo.name,
+            owner: repo.owner,
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stars,
+            contributors: repo.contributors,
+            githubUrl: repo.githubUrl,
+            lastUpdated: repo.lastUpdated,
+          },
+        })
+      )
+      
+      await Promise.all(upsertPromises)
+      console.log(`Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allRepositories.length / batchSize)}`)
+    }
     const totalProcessed = allRepositories.length
     const newlyAdded = newRepositories.length
 
