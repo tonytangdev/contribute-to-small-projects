@@ -81,19 +81,14 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Use bulk upsert operations for better performance
-    console.log(`Upserting ${allRepositories.length} repositories in bulk...`)
+    // Use efficient bulk operations with single connection
+    console.log(`Processing ${allRepositories.length} repositories with bulk operations...`)
     
-    const upsertPromises = allRepositories.map(repo => 
-      prisma.repository.upsert({
-        where: { githubUrl: repo.githubUrl },
-        update: {
-          description: repo.description,
-          language: repo.language,
-          stars: repo.stars,
-          lastUpdated: repo.lastUpdated,
-        },
-        create: {
+    // First, try to create all new repositories
+    if (newRepositories.length > 0) {
+      console.log(`Creating ${newRepositories.length} new repositories...`)
+      await prisma.repository.createMany({
+        data: newRepositories.map(repo => ({
           name: repo.name,
           owner: repo.owner,
           description: repo.description,
@@ -102,11 +97,26 @@ export async function POST(request: NextRequest) {
           contributors: null,
           githubUrl: repo.githubUrl,
           lastUpdated: repo.lastUpdated,
-        },
+        })),
+        skipDuplicates: true,
       })
-    )
+    }
     
-    await Promise.all(upsertPromises)
+    // Then update existing repositories
+    if (existingRepositories.length > 0) {
+      console.log(`Updating ${existingRepositories.length} existing repositories...`)
+      for (const repo of existingRepositories) {
+        await prisma.repository.updateMany({
+          where: { githubUrl: repo.githubUrl },
+          data: {
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stars,
+            lastUpdated: repo.lastUpdated,
+          },
+        })
+      }
+    }
     const totalProcessed = allRepositories.length
     const newlyAdded = newRepositories.length
 
