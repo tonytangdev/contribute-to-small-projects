@@ -81,40 +81,32 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Use sequential database operations to avoid statement timeout
-    console.log(`Upserting ${allRepositories.length} repositories sequentially...`)
+    // Use bulk upsert operations for better performance
+    console.log(`Upserting ${allRepositories.length} repositories in bulk...`)
     
-    for (let i = 0; i < allRepositories.length; i++) {
-      const repo = allRepositories[i]
-      try {
-        await prisma.repository.upsert({
-          where: { githubUrl: repo.githubUrl },
-          update: {
-            description: repo.description,
-            language: repo.language,
-            stars: repo.stars,
-            lastUpdated: repo.lastUpdated,
-          },
-          create: {
-            name: repo.name,
-            owner: repo.owner,
-            description: repo.description,
-            language: repo.language,
-            stars: repo.stars,
-            contributors: null,
-            githubUrl: repo.githubUrl,
-            lastUpdated: repo.lastUpdated,
-          },
-        })
-        
-        if ((i + 1) % 10 === 0) {
-          console.log(`Processed ${i + 1}/${allRepositories.length} repositories`)
-        }
-      } catch (error) {
-        console.error(`Failed to upsert repository ${repo.githubUrl}:`, error)
-        // Continue with other repositories
-      }
-    }
+    const upsertPromises = allRepositories.map(repo => 
+      prisma.repository.upsert({
+        where: { githubUrl: repo.githubUrl },
+        update: {
+          description: repo.description,
+          language: repo.language,
+          stars: repo.stars,
+          lastUpdated: repo.lastUpdated,
+        },
+        create: {
+          name: repo.name,
+          owner: repo.owner,
+          description: repo.description,
+          language: repo.language,
+          stars: repo.stars,
+          contributors: null,
+          githubUrl: repo.githubUrl,
+          lastUpdated: repo.lastUpdated,
+        },
+      })
+    )
+    
+    await Promise.all(upsertPromises)
     const totalProcessed = allRepositories.length
     const newlyAdded = newRepositories.length
 
