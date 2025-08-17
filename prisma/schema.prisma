@@ -14,16 +14,17 @@ datasource db {
 }
 
 model Repository {
-  id          String   @id @default(cuid())
-  name        String
-  owner       String
-  description String?
-  language    String?
-  stars       Int
-  githubUrl   String   @unique @map("github_url")
-  lastUpdated DateTime @map("last_updated")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  name         String
+  owner        String
+  description  String?
+  language     String?
+  stars        Int
+  contributors Int?
+  githubUrl    String   @unique @map("github_url")
+  lastUpdated  DateTime @map("last_updated")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("repositories")
 }

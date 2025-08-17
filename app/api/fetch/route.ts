@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
           description: repo.description,
           language: repo.language,
           stars: repo.stars,
+          contributors: repo.contributors,
           lastUpdated: repo.lastUpdated,
         },
         create: {
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
           description: repo.description,
           language: repo.language,
           stars: repo.stars,
+          contributors: repo.contributors,
           githubUrl: repo.githubUrl,
           lastUpdated: repo.lastUpdated,
         },

@@ -9,6 +9,7 @@ interface Repository {
   description: string | null
   language: string | null
   stars: number
+  contributors: number | null
   githubUrl: string
   lastUpdated: string
 }
@@ -89,12 +90,13 @@ async function getLanguages(): Promise<string[]> {
 }
 
 interface HomeProps {
-  searchParams: { page?: string, language?: string }
+  searchParams: Promise<{ page?: string, language?: string }>
 }
 
 export default async function Home({ searchParams }: HomeProps) {
-  const currentPage = parseInt(searchParams.page || '1', 10)
-  const selectedLanguage = searchParams.language
+  const params = await searchParams
+  const currentPage = parseInt(params.page || '1', 10)
+  const selectedLanguage = params.language
   const data = await getRepositories(currentPage, selectedLanguage)
   const languages = await getLanguages()
   const { repositories, pagination } = data

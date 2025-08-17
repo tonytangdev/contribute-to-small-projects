@@ -23,6 +23,7 @@ export interface Repository {
   description: string | null
   language: string | null
   stars: number
+  contributors: number | null
   githubUrl: string
   lastUpdated: Date
 }
@@ -66,15 +67,45 @@ export class GitHubClient {
 
       const data: GitHubSearchResponse = await response.json()
       
-      return data.items.map(repo => ({
-        name: repo.name,
-        owner: repo.owner.login,
-        description: repo.description,
-        language: repo.language,
-        stars: repo.stargazers_count,
-        githubUrl: repo.html_url,
-        lastUpdated: new Date(repo.updated_at)
-      }))
+      // Fetch contributors count for each repository
+      const repositories = await Promise.all(
+        data.items.map(async (repo) => {
+          let contributors = null
+          try {
+            const contributorsResponse = await fetch(`${this.baseUrl}/repos/${repo.full_name}/contributors?per_page=1`, {
+              headers
+            })
+            
+            if (contributorsResponse.ok) {
+              const linkHeader = contributorsResponse.headers.get('link')
+              if (linkHeader) {
+                // Parse the last page from Link header to get total count
+                const lastPageMatch = linkHeader.match(/page=(\d+)>; rel="last"/)
+                contributors = lastPageMatch ? parseInt(lastPageMatch[1]) : 1
+              } else {
+                // If no Link header, check if we got any contributors
+                const contributorsData = await contributorsResponse.json()
+                contributors = contributorsData.length
+              }
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch contributors for ${repo.full_name}:`, error)
+          }
+
+          return {
+            name: repo.name,
+            owner: repo.owner.login,
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stargazers_count,
+            contributors,
+            githubUrl: repo.html_url,
+            lastUpdated: new Date(repo.updated_at)
+          }
+        })
+      )
+      
+      return repositories
     } catch (error) {
       console.error('Error fetching repositories from GitHub:', error)
       throw error
