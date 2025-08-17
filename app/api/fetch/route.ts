@@ -78,24 +78,8 @@ export async function POST(request: NextRequest) {
     
     console.log(`Found ${newRepositories.length} new repositories and ${existingRepositories.length} existing repositories`)
     
-    // Fetch contributors only for new repositories
-    if (newRepositories.length > 0) {
-      console.log(`Fetching contributors for ${newRepositories.length} new repositories...`)
-      const contributorPromises = newRepositories.map(async (repo) => {
-        const contributors = await githubClient.fetchContributorsCount(`${repo.owner}/${repo.name}`)
-        return { ...repo, contributors }
-      })
-      
-      const newReposWithContributors = await Promise.all(contributorPromises)
-      
-      // Replace the new repositories with the ones that have contributor counts
-      newReposWithContributors.forEach((repoWithContributors, index) => {
-        const originalIndex = allRepositories.findIndex(r => r.githubUrl === repoWithContributors.githubUrl)
-        if (originalIndex !== -1) {
-          allRepositories[originalIndex] = repoWithContributors
-        }
-      })
-    }
+    // Skip fetching contributors to reduce API load and processing time
+    console.log(`Skipping contributor fetch to optimize performance`)
 
     // Use sequential database operations to avoid statement timeout
     console.log(`Upserting ${allRepositories.length} repositories sequentially...`)
@@ -109,7 +93,6 @@ export async function POST(request: NextRequest) {
             description: repo.description,
             language: repo.language,
             stars: repo.stars,
-            contributors: repo.contributors,
             lastUpdated: repo.lastUpdated,
           },
           create: {
@@ -118,7 +101,7 @@ export async function POST(request: NextRequest) {
             description: repo.description,
             language: repo.language,
             stars: repo.stars,
-            contributors: repo.contributors,
+            contributors: null,
             githubUrl: repo.githubUrl,
             lastUpdated: repo.lastUpdated,
           },
