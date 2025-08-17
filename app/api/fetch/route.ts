@@ -36,30 +36,69 @@ export async function POST(request: NextRequest) {
     
     console.log('Starting GitHub repository fetch...')
     
-    // Fetch multiple pages in parallel to get more diverse repositories
-    const pagesToFetch = 5 // Fetch 5 pages = 500 repositories max
-    const pagePromises = []
+    // Use different search strategies to get more diverse repositories
+    const searchStrategies = [
+      { minStars: 100, maxStars: 200, sortBy: 'updated' as const },
+      { minStars: 200, maxStars: 300, sortBy: 'stars' as const },
+      { minStars: 300, maxStars: 400, sortBy: 'forks' as const },
+      { minStars: 400, maxStars: 500, sortBy: 'updated' as const },
+      { minStars: 500, maxStars: 600, sortBy: 'stars' as const }
+    ]
     
-    console.log(`Fetching ${pagesToFetch} pages in parallel...`)
-    for (let page = 1; page <= pagesToFetch; page++) {
-      pagePromises.push(githubClient.searchRepositories(100, 600, page))
-    }
+    console.log(`Fetching repositories using ${searchStrategies.length} different strategies...`)
+    const pagePromises = searchStrategies.map((strategy, index) => {
+      console.log(`Strategy ${index + 1}: ${strategy.minStars}-${strategy.maxStars} stars, sorted by ${strategy.sortBy}`)
+      return githubClient.searchRepositories(strategy.minStars, strategy.maxStars, 1, strategy.sortBy)
+    })
     
     const pageResults = await Promise.all(pagePromises)
     const allRepositories: Repository[] = []
     
     for (let i = 0; i < pageResults.length; i++) {
       const repositories = pageResults[i]
-      console.log(`Page ${i + 1}: fetched ${repositories.length} repositories`)
+      const strategy = searchStrategies[i]
+      console.log(`Strategy ${i + 1} (${strategy.minStars}-${strategy.maxStars} stars, ${strategy.sortBy}): fetched ${repositories.length} repositories`)
       allRepositories.push(...repositories)
-      
-      // If we get less than 100 repos, we've reached the end of available results
-      if (repositories.length < 100) {
-        console.log(`Reached end of results at page ${i + 1}`)
-      }
     }
     
-    console.log(`Fetched ${allRepositories.length} repositories from GitHub across ${Math.min(pagesToFetch, Math.ceil(allRepositories.length / 100))} pages`)
+    console.log(`Fetched ${allRepositories.length} repositories from GitHub using ${searchStrategies.length} different strategies`)
+
+    // Check which repositories already exist in our database
+    const existingRepos = await prisma.repository.findMany({
+      where: {
+        githubUrl: {
+          in: allRepositories.map(repo => repo.githubUrl)
+        }
+      },
+      select: {
+        githubUrl: true
+      }
+    })
+    
+    const existingUrls = new Set(existingRepos.map(repo => repo.githubUrl))
+    const newRepositories = allRepositories.filter(repo => !existingUrls.has(repo.githubUrl))
+    const existingRepositories = allRepositories.filter(repo => existingUrls.has(repo.githubUrl))
+    
+    console.log(`Found ${newRepositories.length} new repositories and ${existingRepositories.length} existing repositories`)
+    
+    // Fetch contributors only for new repositories
+    if (newRepositories.length > 0) {
+      console.log(`Fetching contributors for ${newRepositories.length} new repositories...`)
+      const contributorPromises = newRepositories.map(async (repo) => {
+        const contributors = await githubClient.fetchContributorsCount(`${repo.owner}/${repo.name}`)
+        return { ...repo, contributors }
+      })
+      
+      const newReposWithContributors = await Promise.all(contributorPromises)
+      
+      // Replace the new repositories with the ones that have contributor counts
+      newReposWithContributors.forEach((repoWithContributors, index) => {
+        const originalIndex = allRepositories.findIndex(r => r.githubUrl === repoWithContributors.githubUrl)
+        if (originalIndex !== -1) {
+          allRepositories[originalIndex] = repoWithContributors
+        }
+      })
+    }
 
     // Use parallel database operations for better performance
     console.log(`Upserting ${allRepositories.length} repositories in parallel...`)
@@ -87,14 +126,17 @@ export async function POST(request: NextRequest) {
     )
     
     await Promise.all(upsertPromises)
-    const upsertedCount = allRepositories.length
+    const totalProcessed = allRepositories.length
+    const newlyAdded = newRepositories.length
 
-    console.log(`Successfully upserted ${upsertedCount} repositories`)
+    console.log(`Successfully upserted ${totalProcessed} repositories (${newlyAdded} new, ${totalProcessed - newlyAdded} updated)`)
 
     return NextResponse.json({
       success: true,
-      message: `Successfully fetched and stored ${upsertedCount} repositories`,
-      count: upsertedCount
+      message: `Successfully fetched and stored ${totalProcessed} repositories (${newlyAdded} new, ${totalProcessed - newlyAdded} updated)`,
+      count: totalProcessed,
+      newRepositories: newlyAdded,
+      updatedRepositories: totalProcessed - newlyAdded
     })
 
   } catch (error) {
