@@ -1,45 +1,95 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { GitHubClient, Repository } from '@/lib/github'
+#!/usr/bin/env node
 
-export async function POST(request: NextRequest) {
+/**
+ * Standalone repository fetcher script for VPS deployment
+ * Fetches GitHub repositories and stores them in PostgreSQL database
+ */
+
+const { PrismaClient } = require('@prisma/client')
+
+// GitHub API client
+class GitHubClient {
+  constructor(token) {
+    this.token = token
+    this.baseUrl = 'https://api.github.com'
+  }
+
+  async searchRepositories(minStars = 100, maxStars = 600, page = 1, sortBy = 'updated') {
+    try {
+      const query = `stars:${minStars}..${maxStars} is:public`
+      const params = new URLSearchParams({
+        q: query,
+        sort: sortBy,
+        order: 'desc',
+        per_page: '100',
+        page: page.toString()
+      })
+
+      const headers = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'contribute-to-small-projects'
+      }
+
+      if (this.token && this.token !== 'your_github_token_here') {
+        headers['Authorization'] = `Bearer ${this.token}`
+        console.log('Using GitHub API authentication')
+      } else {
+        console.log('No GitHub API token provided - using unauthenticated requests')
+      }
+
+      const response = await fetch(`${this.baseUrl}/search/repositories?${params}`, {
+        headers
+      })
+
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      
+      // Convert GitHub repositories to our Repository format
+      const repositories = data.items.map((repo) => ({
+        name: repo.name,
+        owner: repo.owner.login,
+        description: repo.description,
+        language: repo.language,
+        stars: repo.stargazers_count,
+        contributors: null,
+        githubUrl: repo.html_url,
+        lastUpdated: new Date(repo.updated_at)
+      }))
+      
+      return repositories
+    } catch (error) {
+      console.error('Error fetching repositories from GitHub:', error)
+      throw error
+    }
+  }
+}
+
+async function main() {
+  console.log('=== Repository Fetch Script Started ===')
+  console.log(`Started at: ${new Date().toISOString()}`)
+
+  // Initialize Prisma client
+  const prisma = new PrismaClient()
+
   try {
-    const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-
-    if (!cronSecret) {
-      console.error('CRON_SECRET environment variable is not set')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      console.error('Unauthorized fetch attempt')
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
+    // Check required environment variables
     const githubToken = process.env.GITHUB_TOKEN
     if (!githubToken) {
       console.error('GITHUB_TOKEN environment variable is not set')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
+      process.exit(1)
     }
 
     const githubClient = new GitHubClient(githubToken)
     
     console.log('Starting GitHub repository fetch...')
     
-    // Use fewer search strategies to reduce load and stay within timeout limits
+    // Use search strategies to get diverse repositories
     const searchStrategies = [
-      { minStars: 100, maxStars: 300, sortBy: 'updated' as const },
-      { minStars: 300, maxStars: 600, sortBy: 'stars' as const }
+      { minStars: 100, maxStars: 300, sortBy: 'updated' },
+      { minStars: 300, maxStars: 600, sortBy: 'stars' }
     ]
     
     console.log(`Fetching repositories using ${searchStrategies.length} different strategies...`)
@@ -49,7 +99,7 @@ export async function POST(request: NextRequest) {
     })
     
     const pageResults = await Promise.all(pagePromises)
-    const allRepositories: Repository[] = []
+    const allRepositories = []
     
     for (let i = 0; i < pageResults.length; i++) {
       const repositories = pageResults[i]
@@ -78,13 +128,9 @@ export async function POST(request: NextRequest) {
     
     console.log(`Found ${newRepositories.length} new repositories and ${existingRepositories.length} existing repositories`)
     
-    // Skip fetching contributors to reduce API load and processing time
-    console.log(`Skipping contributor fetch to optimize performance`)
-
-    // Use single-connection sequential operations to avoid pool exhaustion
+    // Create new repositories sequentially
     let actualNewCount = 0
     
-    // Create new repositories one by one to ensure single connection usage
     if (newRepositories.length > 0) {
       console.log(`Creating ${newRepositories.length} new repositories sequentially...`)
       
@@ -108,9 +154,8 @@ export async function POST(request: NextRequest) {
           if ((i + 1) % 10 === 0) {
             console.log(`Created ${i + 1}/${newRepositories.length} new repositories`)
           }
-        } catch (error: unknown) {
-          if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-            // Unique constraint violation - repository already exists, skip
+        } catch (error) {
+          if (error.code === 'P2002') {
             console.log(`Skipped duplicate repository: ${repo.githubUrl}`)
           } else {
             console.error(`Failed to create repository ${repo.githubUrl}:`, error)
@@ -123,7 +168,7 @@ export async function POST(request: NextRequest) {
       console.log(`No new repositories to create`)
     }
     
-    // Update existing repositories one by one to avoid connection issues
+    // Update existing repositories sequentially
     if (existingRepositories.length > 0) {
       console.log(`Updating ${existingRepositories.length} existing repositories sequentially...`)
       
@@ -151,19 +196,19 @@ export async function POST(request: NextRequest) {
       console.log(`Updated ${existingRepositories.length} existing repositories`)
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `Successfully processed ${allRepositories.length} repositories (${actualNewCount} new, ${existingRepositories.length} updated)`,
-      totalFetched: allRepositories.length,
-      newRepositories: actualNewCount,
-      updatedRepositories: existingRepositories.length
-    })
+    console.log(`\n=== Summary ===`)
+    console.log(`Total repositories processed: ${allRepositories.length}`)
+    console.log(`New repositories created: ${actualNewCount}`)
+    console.log(`Existing repositories updated: ${existingRepositories.length}`)
+    console.log(`Completed at: ${new Date().toISOString()}`)
 
   } catch (error) {
-    console.error('Error in fetch endpoint:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch repositories' },
-      { status: 500 }
-    )
+    console.error('Error in repository fetch:', error)
+    process.exit(1)
+  } finally {
+    await prisma.$disconnect()
   }
 }
+
+// Run the script
+main()

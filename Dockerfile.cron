@@ -1,0 +1,32 @@
+FROM node:18-alpine
+
+# Install cron
+RUN apk add --no-cache dcron
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy scripts
+COPY scripts ./scripts/
+
+# Make script executable
+RUN chmod +x ./scripts/fetch-repositories.js
+
+# Create log directory
+RUN mkdir -p /var/log/cron
+
+# Copy crontab file
+COPY scripts/crontab /etc/crontabs/root
+
+# Start cron in foreground
+CMD ["crond", "-f", "-d", "8"]
