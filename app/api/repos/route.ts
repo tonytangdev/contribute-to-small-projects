@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const hasNextPage = validPage < totalPages
     const hasPrevPage = validPage > 1
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       repositories,
       pagination: {
         currentPage: validPage,
@@ -63,6 +63,11 @@ export async function GET(request: NextRequest) {
         hasPrevPage
       }
     })
+
+    // Cache for 5 minutes (300 seconds) and allow stale content for 1 hour while revalidating
+    response.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=3600')
+    
+    return response
   } catch (error) {
     console.error('Error fetching repositories:', error)
     return NextResponse.json(

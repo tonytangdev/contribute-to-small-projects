@@ -3,6 +3,9 @@ import RepoCard from '@/components/repo-card'
 import LanguageSelect from '@/components/language-select'
 import SearchInput from '@/components/search-input'
 
+// Enable ISR for better performance
+export const revalidate = 300 // Revalidate every 5 minutes
+
 interface Repository {
   id: string
   name: string
@@ -51,7 +54,7 @@ async function getRepositories(page = 1, language?: string, search?: string): Pr
     }
     
     const response = await fetch(`${baseUrl}/api/repos?${params}`, {
-      cache: 'no-store'
+      next: { revalidate: 300 } // Revalidate every 5 minutes
     })
     
     if (!response.ok) {
@@ -84,7 +87,7 @@ async function getLanguages(): Promise<string[]> {
         : 'http://localhost:3000'
     
     const response = await fetch(`${baseUrl}/api/languages`, {
-      cache: 'no-store'
+      next: { revalidate: 3600 } // Revalidate every 1 hour
     })
     
     if (!response.ok) {

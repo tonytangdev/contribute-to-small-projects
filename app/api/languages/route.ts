@@ -23,7 +23,12 @@ export async function GET() {
       .filter(Boolean)
       .sort()
 
-    return NextResponse.json(languageList)
+    const response = NextResponse.json(languageList)
+    
+    // Cache languages for 1 hour (3600 seconds) since they change infrequently
+    response.headers.set('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400')
+    
+    return response
   } catch (error) {
     console.error('Error fetching languages:', error)
     return NextResponse.json(
