@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Use single bulk operation - maximum efficiency!
-    console.log(`Processing ${allRepositories.length} repositories with single bulk createMany...`)
+    // First, bulk create all repositories (new ones created, existing ones skipped)
+    console.log(`Bulk creating ${allRepositories.length} repositories...`)
     
     const result = await prisma.repository.createMany({
       data: allRepositories.map(repo => ({
@@ -99,14 +99,33 @@ export async function POST(request: NextRequest) {
     })
     
     const actualNewCount = result.count
-    console.log(`Successfully created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
+    console.log(`Created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
+    
+    // Then update existing repositories to keep data current
+    if (existingRepositories.length > 0) {
+      console.log(`Updating ${existingRepositories.length} existing repositories...`)
+      
+      for (const repo of existingRepositories) {
+        await prisma.repository.updateMany({
+          where: { githubUrl: repo.githubUrl },
+          data: {
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stars,
+            lastUpdated: repo.lastUpdated,
+          },
+        })
+      }
+      
+      console.log(`Updated ${existingRepositories.length} existing repositories`)
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Successfully processed ${allRepositories.length} repositories (${actualNewCount} new, ${allRepositories.length - actualNewCount} skipped)`,
+      message: `Successfully processed ${allRepositories.length} repositories (${actualNewCount} new, ${existingRepositories.length} updated)`,
       totalFetched: allRepositories.length,
       newRepositories: actualNewCount,
-      skippedRepositories: allRepositories.length - actualNewCount
+      updatedRepositories: existingRepositories.length
     })
 
   } catch (error) {
