@@ -101,20 +101,29 @@ export async function POST(request: NextRequest) {
     const actualNewCount = result.count
     console.log(`Created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
     
-    // Then update existing repositories to keep data current
+    // Then update existing repositories in small batches to avoid connection issues
     if (existingRepositories.length > 0) {
-      console.log(`Updating ${existingRepositories.length} existing repositories...`)
+      console.log(`Updating ${existingRepositories.length} existing repositories in batches...`)
       
-      for (const repo of existingRepositories) {
-        await prisma.repository.updateMany({
-          where: { githubUrl: repo.githubUrl },
-          data: {
-            description: repo.description,
-            language: repo.language,
-            stars: repo.stars,
-            lastUpdated: repo.lastUpdated,
-          },
-        })
+      const batchSize = 5 // Small batches to stay under connection limit
+      
+      for (let i = 0; i < existingRepositories.length; i += batchSize) {
+        const batch = existingRepositories.slice(i, i + batchSize)
+        
+        const updatePromises = batch.map(repo =>
+          prisma.repository.updateMany({
+            where: { githubUrl: repo.githubUrl },
+            data: {
+              description: repo.description,
+              language: repo.language,
+              stars: repo.stars,
+              lastUpdated: repo.lastUpdated,
+            },
+          })
+        )
+        
+        await Promise.all(updatePromises)
+        console.log(`Updated batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(existingRepositories.length / batchSize)}`)
       }
       
       console.log(`Updated ${existingRepositories.length} existing repositories`)
