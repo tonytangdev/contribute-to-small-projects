@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '25', 10)
     const language = searchParams.get('language')
+    const search = searchParams.get('search')
     
     // Validate pagination parameters
     const validPage = Math.max(1, page)
@@ -15,7 +16,18 @@ export async function GET(request: NextRequest) {
     const skip = (validPage - 1) * validLimit
 
     // Build where clause for filtering
-    const whereClause = language ? { language } : {}
+    const whereClause: any = {}
+    
+    if (language) {
+      whereClause.language = language
+    }
+    
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ]
+    }
 
     // Get total count for pagination metadata
     const totalCount = await prisma.repository.count({ where: whereClause })

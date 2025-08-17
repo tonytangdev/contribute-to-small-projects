@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import RepoCard from '@/components/repo-card'
 import LanguageSelect from '@/components/language-select'
+import SearchInput from '@/components/search-input'
 
 interface Repository {
   id: string
@@ -28,7 +29,7 @@ interface RepositoryResponse {
   pagination: PaginationInfo
 }
 
-async function getRepositories(page = 1, language?: string): Promise<RepositoryResponse> {
+async function getRepositories(page = 1, language?: string, search?: string): Promise<RepositoryResponse> {
   try {
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
@@ -41,6 +42,10 @@ async function getRepositories(page = 1, language?: string): Promise<RepositoryR
     
     if (language) {
       params.set('language', language)
+    }
+    
+    if (search) {
+      params.set('search', search)
     }
     
     const response = await fetch(`${baseUrl}/api/repos?${params}`, {
@@ -90,14 +95,15 @@ async function getLanguages(): Promise<string[]> {
 }
 
 interface HomeProps {
-  searchParams: Promise<{ page?: string, language?: string }>
+  searchParams: Promise<{ page?: string, language?: string, search?: string }>
 }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams
   const currentPage = parseInt(params.page || '1', 10)
   const selectedLanguage = params.language
-  const data = await getRepositories(currentPage, selectedLanguage)
+  const searchTerm = params.search
+  const data = await getRepositories(currentPage, selectedLanguage, searchTerm)
   const languages = await getLanguages()
   const { repositories, pagination } = data
 
@@ -105,7 +111,7 @@ export default async function Home({ searchParams }: HomeProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <header className="text-center mb-16">
-          <div className="space-y-6">
+          <div className="space-y-8">
             <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
               Contribute to Small Projects
             </h1>
@@ -113,8 +119,13 @@ export default async function Home({ searchParams }: HomeProps) {
               Discover open source projects with 100-600 stars — perfect for your first contributions
             </p>
             
-            {/* Language Filter */}
+            {/* Search Input */}
             <div className="flex justify-center pt-4">
+              <SearchInput searchTerm={searchTerm} />
+            </div>
+            
+            {/* Language Filter */}
+            <div className="flex justify-center">
               <LanguageSelect languages={languages} selectedLanguage={selectedLanguage} />
             </div>
           </div>
@@ -144,6 +155,11 @@ export default async function Home({ searchParams }: HomeProps) {
                       {' '}for <span className="font-bold text-indigo-600">{selectedLanguage}</span>
                     </>
                   )}
+                  {searchTerm && (
+                    <>
+                      {' '}matching "<span className="font-bold text-indigo-600">{searchTerm}</span>"
+                    </>
+                  )}
                 </p>
                 <p className="text-slate-500 text-sm mt-1">
                   Page {pagination.currentPage} of {pagination.totalPages}
@@ -161,7 +177,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="flex justify-center items-center gap-6 mt-16">
               {pagination.hasPrevPage ? (
                 <Link 
-                  href={`/?page=${pagination.currentPage - 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}`}
+                  href={`/?page=${pagination.currentPage - 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`}
                   className="group flex items-center gap-3 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-700 rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-sm"
                 >
                   <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +206,7 @@ export default async function Home({ searchParams }: HomeProps) {
               
               {pagination.hasNextPage ? (
                 <Link 
-                  href={`/?page=${pagination.currentPage + 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}`}
+                  href={`/?page=${pagination.currentPage + 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`}
                   className="group flex items-center gap-3 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-700 rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-sm"
                 >
                   Next

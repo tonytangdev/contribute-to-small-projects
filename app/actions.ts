@@ -12,3 +12,14 @@ export async function filterByLanguage(formData: FormData) {
   
   redirect(`/?${params.toString()}`)
 }
+
+export async function searchRepositories(formData: FormData) {
+  const search = formData.get('search') as string
+  const params = new URLSearchParams()
+  
+  if (search && search.trim()) {
+    params.set('search', search.trim())
+  }
+  
+  redirect(`/?${params.toString()}`)
+}
