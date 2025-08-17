@@ -31,9 +31,11 @@ interface RepositoryResponse {
 
 async function getRepositories(page = 1, language?: string, search?: string): Promise<RepositoryResponse> {
   try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
+    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
+      : process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000'
     
     const params = new URLSearchParams({
       page: page.toString(),
@@ -75,9 +77,11 @@ async function getRepositories(page = 1, language?: string, search?: string): Pr
 
 async function getLanguages(): Promise<string[]> {
   try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
+    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
+      : process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000'
     
     const response = await fetch(`${baseUrl}/api/languages`, {
       cache: 'no-store'
