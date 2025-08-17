@@ -35,22 +35,29 @@ export class GitHubClient {
     this.token = token
   }
 
-  async searchRepositories(minStars = 100, maxStars = 600): Promise<Repository[]> {
+  async searchRepositories(minStars = 100, maxStars = 600, page = 1): Promise<Repository[]> {
     try {
       const query = `stars:${minStars}..${maxStars} is:public`
       const params = new URLSearchParams({
         q: query,
         sort: 'updated',
         order: 'desc',
-        per_page: '100'
+        per_page: '100',
+        page: page.toString()
       })
 
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'contribute-to-small-projects'
+      }
+
+      // Only add Authorization header if token is provided and not a placeholder
+      if (this.token && this.token !== 'your_github_token_here') {
+        headers['Authorization'] = `Bearer ${this.token}`
+      }
+
       const response = await fetch(`${this.baseUrl}/search/repositories?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'contribute-to-small-projects'
-        }
+        headers
       })
 
       if (!response.ok) {

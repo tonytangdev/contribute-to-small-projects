@@ -35,11 +35,27 @@ export async function POST(request: NextRequest) {
     const githubClient = new GitHubClient(githubToken)
     
     console.log('Starting GitHub repository fetch...')
-    const repositories = await githubClient.searchRepositories()
-    console.log(`Fetched ${repositories.length} repositories from GitHub`)
+    
+    // Fetch multiple pages to get more diverse repositories
+    const allRepositories: any[] = []
+    const pagesToFetch = 5 // Fetch 5 pages = 500 repositories max
+    
+    for (let page = 1; page <= pagesToFetch; page++) {
+      console.log(`Fetching page ${page}...`)
+      const repositories = await githubClient.searchRepositories(100, 600, page)
+      allRepositories.push(...repositories)
+      
+      // If we get less than 100 repos, we've reached the end
+      if (repositories.length < 100) {
+        console.log(`Reached end of results at page ${page}`)
+        break
+      }
+    }
+    
+    console.log(`Fetched ${allRepositories.length} repositories from GitHub across ${Math.min(pagesToFetch, Math.ceil(allRepositories.length / 100))} pages`)
 
     let upsertedCount = 0
-    for (const repo of repositories) {
+    for (const repo of allRepositories) {
       await prisma.repository.upsert({
         where: { githubUrl: repo.githubUrl },
         update: {

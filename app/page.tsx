@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import RepoCard from '@/components/repo-card'
 
 interface Repository {
@@ -11,13 +12,27 @@ interface Repository {
   lastUpdated: string
 }
 
-async function getRepositories(): Promise<Repository[]> {
+interface PaginationInfo {
+  currentPage: number
+  totalPages: number
+  totalCount: number
+  limit: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
+interface RepositoryResponse {
+  repositories: Repository[]
+  pagination: PaginationInfo
+}
+
+async function getRepositories(page = 1): Promise<RepositoryResponse> {
   try {
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000'
     
-    const response = await fetch(`${baseUrl}/api/repos`, {
+    const response = await fetch(`${baseUrl}/api/repos?page=${page}&limit=25`, {
       cache: 'no-store'
     })
     
@@ -28,12 +43,28 @@ async function getRepositories(): Promise<Repository[]> {
     return response.json()
   } catch (error) {
     console.error('Error fetching repositories:', error)
-    return []
+    return {
+      repositories: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalCount: 0,
+        limit: 25,
+        hasNextPage: false,
+        hasPrevPage: false
+      }
+    }
   }
 }
 
-export default async function Home() {
-  const repositories = await getRepositories()
+interface HomeProps {
+  searchParams: { page?: string }
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+  const currentPage = parseInt(searchParams.page || '1', 10)
+  const data = await getRepositories(currentPage)
+  const { repositories, pagination } = data
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,7 +91,7 @@ export default async function Home() {
           <>
             <div className="text-center mb-8">
               <p className="text-gray-600">
-                Showing {repositories.length} repositories
+                Showing {repositories.length} of {pagination.totalCount} repositories (Page {pagination.currentPage} of {pagination.totalPages})
               </p>
             </div>
             
@@ -68,6 +99,45 @@ export default async function Home() {
               {repositories.map((repo) => (
                 <RepoCard key={repo.id} repository={repo} />
               ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex justify-center items-center gap-4 mt-12">
+              {pagination.hasPrevPage ? (
+                <Link 
+                  href={`/?page=${pagination.currentPage - 1}`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ← Previous
+                </Link>
+              ) : (
+                <div className="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
+                  ← Previous
+                </div>
+              )}
+              
+              <span className="px-4 py-2 text-gray-600">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </span>
+              
+              {pagination.hasNextPage ? (
+                <Link 
+                  href={`/?page=${pagination.currentPage + 1}`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Next →
+                </Link>
+              ) : (
+                <div className="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
+                  Next →
+                </div>
+              )}
+            </div>
+            
+            <div className="text-center mt-4">
+              <p className="text-gray-500 text-sm">
+                {pagination.hasNextPage && `${pagination.totalCount - (pagination.currentPage * pagination.limit)} more repositories available`}
+              </p>
             </div>
           </>
         )}
