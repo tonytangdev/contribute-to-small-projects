@@ -56,10 +56,7 @@ const nextConfig = {
   // Enable compression
   compress: true,
 
-  // Optimize CSS
-  experimental: {
-    optimizeCss: true,
-  },
+  // Remove CSS optimization for now (requires additional dependencies)
 }
 
 module.exports = nextConfig
