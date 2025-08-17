@@ -24,11 +24,14 @@ cp .env.vps .env
 nano .env
 ```
 
-Edit the `.env` file and add your GitHub token:
+Edit the `.env` file with your credentials:
 ```env
 GITHUB_TOKEN=ghp_your_actual_github_token_here
 CRON_SECRET=your_secure_random_string
+DATABASE_URL=postgresql://postgres.xxx:password@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
+
+**Note**: Replace the DATABASE_URL with your actual Supabase connection string.
 
 ### 3. Deploy with Docker Compose
 
@@ -43,14 +46,16 @@ docker-compose -f docker-compose.vps.yml ps
 docker-compose -f docker-compose.vps.yml logs -f
 ```
 
-### 4. Initialize Database
+### 4. Initialize Database (Optional)
+
+Since you're using Supabase, the database should already be set up. If you need to run migrations:
 
 ```bash
-# Run database migrations
+# Run database migrations (only if needed)
 docker-compose -f docker-compose.vps.yml exec app npx prisma migrate deploy
 
-# Or reset database if needed
-docker-compose -f docker-compose.vps.yml exec app npx prisma migrate reset --force
+# Generate Prisma client (usually done during build)
+docker-compose -f docker-compose.vps.yml exec app npx prisma generate
 ```
 
 ### 5. Test the Setup
@@ -67,9 +72,10 @@ docker-compose -f docker-compose.vps.yml logs repository-fetcher
 
 The Docker Compose setup includes:
 
-1. **postgres**: PostgreSQL 17 database
-2. **repository-fetcher**: Cron service that runs the fetch script daily at 2 AM
-3. **app**: Next.js web application (optional)
+1. **repository-fetcher**: Cron service that runs the fetch script daily at 2 AM
+2. **app**: Next.js web application (optional)
+
+**Note**: Uses your Supabase PostgreSQL database instead of a local database.
 
 ## Cron Schedule
 
@@ -97,14 +103,11 @@ docker-compose -f docker-compose.vps.yml exec repository-fetcher cat /var/log/cr
 
 ### Check Database
 ```bash
-# Connect to database
-docker-compose -f docker-compose.vps.yml exec postgres psql -U postgres -d contribute_to_small_projects
+# Connect to Supabase database (you can also use the Supabase dashboard)
+docker-compose -f docker-compose.vps.yml exec app npx prisma studio
 
-# Count repositories
-SELECT COUNT(*) FROM "Repository";
-
-# Recent repositories
-SELECT name, owner, stars, "lastUpdated" FROM "Repository" ORDER BY "lastUpdated" DESC LIMIT 10;
+# Or use Prisma CLI to check data
+docker-compose -f docker-compose.vps.yml exec app npx prisma db seed
 ```
 
 ## Manual Operations
@@ -124,13 +127,12 @@ docker-compose -f docker-compose.vps.yml down
 docker-compose -f docker-compose.vps.yml up -d --build
 ```
 
-### Backup Database
+### Database Operations
 ```bash
-# Create backup
-docker-compose -f docker-compose.vps.yml exec postgres pg_dump -U postgres contribute_to_small_projects > backup.sql
-
-# Restore backup
-docker-compose -f docker-compose.vps.yml exec -T postgres psql -U postgres contribute_to_small_projects < backup.sql
+# Backup/restore is handled by Supabase
+# Use Supabase dashboard for database management
+# Or use Prisma for schema operations
+docker-compose -f docker-compose.vps.yml exec app npx prisma db push
 ```
 
 ## Troubleshooting
@@ -142,7 +144,6 @@ docker-compose -f docker-compose.vps.yml ps
 
 # View logs for specific service
 docker-compose -f docker-compose.vps.yml logs repository-fetcher
-docker-compose -f docker-compose.vps.yml logs postgres
 docker-compose -f docker-compose.vps.yml logs app
 ```
 
@@ -157,17 +158,22 @@ docker-compose -f docker-compose.vps.yml exec repository-fetcher crontab -l
 
 ### Database Connection Issues
 ```bash
-# Test database connection
+# Test Supabase database connection
 docker-compose -f docker-compose.vps.yml exec app npx prisma db pull
 
-# Check database logs
-docker-compose -f docker-compose.vps.yml logs postgres
+# Test connection with simple query
+docker-compose -f docker-compose.vps.yml exec repository-fetcher node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.repository.count().then(count => console.log('Repository count:', count)).finally(() => prisma.\$disconnect());
+"
 ```
 
 ## Security Notes
 
-- The PostgreSQL database is only accessible from within the Docker network
+- Database connection goes through Supabase's secure connection (SSL enabled)
 - Make sure your `.env` file is not committed to version control
+- Keep your Supabase credentials secure
 - Consider using Docker secrets for production deployments
 - The web app is exposed on port 3000 - use a reverse proxy (nginx) for production
 
