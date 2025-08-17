@@ -81,25 +81,35 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // First, bulk create all repositories (new ones created, existing ones skipped)
-    console.log(`Bulk creating ${allRepositories.length} repositories...`)
+    // Create repositories in small batches to avoid statement timeout
+    console.log(`Creating ${allRepositories.length} repositories in batches...`)
     
-    const result = await prisma.repository.createMany({
-      data: allRepositories.map(repo => ({
-        name: repo.name,
-        owner: repo.owner,
-        description: repo.description,
-        language: repo.language,
-        stars: repo.stars,
-        contributors: null,
-        githubUrl: repo.githubUrl,
-        lastUpdated: repo.lastUpdated,
-      })),
-      skipDuplicates: true,
-    })
+    const createBatchSize = 20 // Small batches for createMany
+    let totalCreated = 0
     
-    const actualNewCount = result.count
-    console.log(`Created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
+    for (let i = 0; i < allRepositories.length; i += createBatchSize) {
+      const batch = allRepositories.slice(i, i + createBatchSize)
+      
+      const result = await prisma.repository.createMany({
+        data: batch.map(repo => ({
+          name: repo.name,
+          owner: repo.owner,
+          description: repo.description,
+          language: repo.language,
+          stars: repo.stars,
+          contributors: null,
+          githubUrl: repo.githubUrl,
+          lastUpdated: repo.lastUpdated,
+        })),
+        skipDuplicates: true,
+      })
+      
+      totalCreated += result.count
+      console.log(`Batch ${Math.floor(i / createBatchSize) + 1}/${Math.ceil(allRepositories.length / createBatchSize)}: created ${result.count} new repositories`)
+    }
+    
+    const actualNewCount = totalCreated
+    console.log(`Total: created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
     
     // Then update existing repositories in small batches to avoid connection issues
     if (existingRepositories.length > 0) {
