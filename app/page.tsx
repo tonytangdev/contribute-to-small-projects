@@ -2,6 +2,8 @@ import Link from 'next/link'
 import RepoCard from '@/components/repo-card'
 import LanguageSelect from '@/components/language-select'
 import SearchInput from '@/components/search-input'
+import PaginationPreloader from '@/components/pagination-preloader'
+import PreloadIndicator from '@/components/preload-indicator'
 
 // Enable ISR for better performance
 export const revalidate = 300 // Revalidate every 5 minutes
@@ -180,11 +182,21 @@ export default async function Home({ searchParams }: HomeProps) {
               ))}
             </div>
 
+            {/* Pagination Preloader */}
+            <PaginationPreloader
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              hasNextPage={pagination.hasNextPage}
+              selectedLanguage={selectedLanguage}
+              searchTerm={searchTerm}
+            />
+            
             {/* Pagination Controls */}
-            <div className="flex justify-center items-center gap-6 mt-16">
+            <div className="flex justify-center items-center gap-6 mt-16 relative">
               {pagination.hasPrevPage ? (
                 <Link 
                   href={`/?page=${pagination.currentPage - 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`}
+                  prefetch={true}
                   className="group flex items-center gap-3 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-700 rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-sm"
                 >
                   <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,6 +226,7 @@ export default async function Home({ searchParams }: HomeProps) {
               {pagination.hasNextPage ? (
                 <Link 
                   href={`/?page=${pagination.currentPage + 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`}
+                  prefetch={true}
                   className="group flex items-center gap-3 px-8 py-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-700 rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-sm"
                 >
                   Next
@@ -242,6 +255,9 @@ export default async function Home({ searchParams }: HomeProps) {
             )}
           </>
         )}
+        
+        {/* Preload Indicator */}
+        <PreloadIndicator />
       </div>
     </div>
   )
