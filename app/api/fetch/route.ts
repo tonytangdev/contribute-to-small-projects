@@ -36,10 +36,9 @@ export async function POST(request: NextRequest) {
     
     console.log('Starting GitHub repository fetch...')
     
-    // Use fewer search strategies to reduce load and stay within timeout limits
+    // Use single search strategy to reduce processing time for Vercel timeout limits  
     const searchStrategies = [
-      { minStars: 100, maxStars: 300, sortBy: 'updated' as const },
-      { minStars: 300, maxStars: 600, sortBy: 'stars' as const }
+      { minStars: 100, maxStars: 400, sortBy: 'updated' as const }
     ]
     
     console.log(`Fetching repositories using ${searchStrategies.length} different strategies...`)
@@ -123,40 +122,15 @@ export async function POST(request: NextRequest) {
       console.log(`No new repositories to create`)
     }
     
-    // Update existing repositories one by one to avoid connection issues
-    if (existingRepositories.length > 0) {
-      console.log(`Updating ${existingRepositories.length} existing repositories sequentially...`)
-      
-      for (let i = 0; i < existingRepositories.length; i++) {
-        const repo = existingRepositories[i]
-        try {
-          await prisma.repository.updateMany({
-            where: { githubUrl: repo.githubUrl },
-            data: {
-              description: repo.description,
-              language: repo.language,
-              stars: repo.stars,
-              lastUpdated: repo.lastUpdated,
-            },
-          })
-          
-          if ((i + 1) % 10 === 0) {
-            console.log(`Updated ${i + 1}/${existingRepositories.length} existing repositories`)
-          }
-        } catch (error) {
-          console.error(`Failed to update repository ${repo.githubUrl}:`, error)
-        }
-      }
-      
-      console.log(`Updated ${existingRepositories.length} existing repositories`)
-    }
+    // Skip updates to stay within Vercel timeout limits - focus on new repositories only
+    console.log(`Skipping updates for ${existingRepositories.length} existing repositories to stay within timeout limits`)
 
     return NextResponse.json({
       success: true,
-      message: `Successfully processed ${allRepositories.length} repositories (${actualNewCount} new, ${existingRepositories.length} updated)`,
+      message: `Successfully processed ${allRepositories.length} repositories (${actualNewCount} new, ${existingRepositories.length} skipped)`,
       totalFetched: allRepositories.length,
       newRepositories: actualNewCount,
-      updatedRepositories: existingRepositories.length
+      skippedRepositories: existingRepositories.length
     })
 
   } catch (error) {
