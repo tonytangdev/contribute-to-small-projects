@@ -81,35 +81,39 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Create repositories in small batches to avoid statement timeout
-    console.log(`Creating ${allRepositories.length} repositories in batches...`)
+    // Create only new repositories in batches to avoid statement timeout
+    let actualNewCount = 0
     
-    const createBatchSize = 20 // Small batches for createMany
-    let totalCreated = 0
-    
-    for (let i = 0; i < allRepositories.length; i += createBatchSize) {
-      const batch = allRepositories.slice(i, i + createBatchSize)
+    if (newRepositories.length > 0) {
+      console.log(`Creating ${newRepositories.length} new repositories in batches...`)
       
-      const result = await prisma.repository.createMany({
-        data: batch.map(repo => ({
-          name: repo.name,
-          owner: repo.owner,
-          description: repo.description,
-          language: repo.language,
-          stars: repo.stars,
-          contributors: null,
-          githubUrl: repo.githubUrl,
-          lastUpdated: repo.lastUpdated,
-        })),
-        skipDuplicates: true,
-      })
+      const createBatchSize = 20 // Small batches for createMany
       
-      totalCreated += result.count
-      console.log(`Batch ${Math.floor(i / createBatchSize) + 1}/${Math.ceil(allRepositories.length / createBatchSize)}: created ${result.count} new repositories`)
+      for (let i = 0; i < newRepositories.length; i += createBatchSize) {
+        const batch = newRepositories.slice(i, i + createBatchSize)
+        
+        const result = await prisma.repository.createMany({
+          data: batch.map(repo => ({
+            name: repo.name,
+            owner: repo.owner,
+            description: repo.description,
+            language: repo.language,
+            stars: repo.stars,
+            contributors: null,
+            githubUrl: repo.githubUrl,
+            lastUpdated: repo.lastUpdated,
+          })),
+          skipDuplicates: true,
+        })
+        
+        actualNewCount += result.count
+        console.log(`Create batch ${Math.floor(i / createBatchSize) + 1}/${Math.ceil(newRepositories.length / createBatchSize)}: created ${result.count} repositories`)
+      }
+      
+      console.log(`Created ${actualNewCount} new repositories`)
+    } else {
+      console.log(`No new repositories to create`)
     }
-    
-    const actualNewCount = totalCreated
-    console.log(`Total: created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
     
     // Then update existing repositories in small batches to avoid connection issues
     if (existingRepositories.length > 0) {
