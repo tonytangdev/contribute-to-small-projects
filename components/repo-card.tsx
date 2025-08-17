@@ -51,7 +51,7 @@ export default function RepoCard({ repository }: RepoCardProps) {
               <span className="flex items-center text-xs sm:text-sm text-slate-600 font-medium">
                 <span className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gradient-to-r from-indigo-400 to-blue-500 mr-1 sm:mr-2 shadow-sm"></span>
                 <span className="hidden sm:inline">{repository.language}</span>
-                <span className="sm:hidden">{repository.language.substring(0, 3)}</span>
+                <span className="sm:hidden">{repository.language}</span>
               </span>
             )}
             <span className="flex items-center text-xs sm:text-sm text-slate-600 font-medium">
