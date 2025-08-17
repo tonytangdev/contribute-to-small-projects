@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface PaginationPreloaderProps {
@@ -22,45 +22,7 @@ export default function PaginationPreloader({
   const observerRef = useRef<HTMLDivElement>(null)
   const preloadedPages = useRef<Set<number>>(new Set())
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Preload next page when pagination comes into view
-            if (hasNextPage) {
-              const nextPage = currentPage + 1
-              preloadNextPage(nextPage)
-            }
-            
-            // Also preload a few pages ahead for smoother navigation
-            for (let i = 1; i <= 2; i++) {
-              const futurePageNum = currentPage + i
-              if (futurePageNum <= totalPages && !preloadedPages.current.has(futurePageNum)) {
-                preloadNextPage(futurePageNum)
-              }
-            }
-          }
-        })
-      },
-      {
-        rootMargin: '100px', // Start preloading 100px before pagination comes into view
-        threshold: 0.1
-      }
-    )
-
-    if (observerRef.current) {
-      observer.observe(observerRef.current)
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observer.unobserve(observerRef.current)
-      }
-    }
-  }, [currentPage, totalPages, hasNextPage, selectedLanguage, searchTerm])
-
-  const preloadNextPage = async (pageNum: number) => {
+  const preloadNextPage = useCallback(async (pageNum: number) => {
     if (preloadedPages.current.has(pageNum)) return
     
     try {
@@ -111,7 +73,47 @@ export default function PaginationPreloader({
       // Dispatch preload end event even on error
       window.dispatchEvent(new CustomEvent('preload-end'))
     }
-  }
+  }, [selectedLanguage, searchTerm, router])
+
+  useEffect(() => {
+    const currentObserverRef = observerRef.current
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Preload next page when pagination comes into view
+            if (hasNextPage) {
+              const nextPage = currentPage + 1
+              preloadNextPage(nextPage)
+            }
+            
+            // Also preload a few pages ahead for smoother navigation
+            for (let i = 1; i <= 2; i++) {
+              const futurePageNum = currentPage + i
+              if (futurePageNum <= totalPages && !preloadedPages.current.has(futurePageNum)) {
+                preloadNextPage(futurePageNum)
+              }
+            }
+          }
+        })
+      },
+      {
+        rootMargin: '100px', // Start preloading 100px before pagination comes into view
+        threshold: 0.1
+      }
+    )
+
+    if (currentObserverRef) {
+      observer.observe(currentObserverRef)
+    }
+
+    return () => {
+      if (currentObserverRef) {
+        observer.unobserve(currentObserverRef)
+      }
+    }
+  }, [currentPage, totalPages, hasNextPage, selectedLanguage, searchTerm, preloadNextPage])
 
   return (
     <div ref={observerRef} className="absolute bottom-0 left-0 w-1 h-1 opacity-0 pointer-events-none" />

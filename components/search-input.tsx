@@ -2,9 +2,31 @@
 
 import { searchRepositories } from '@/app/actions'
 import { useRef } from 'react'
+import { useFormStatus } from 'react-dom'
 
 interface SearchInputProps {
   searchTerm?: string
+}
+
+function SearchButton() {
+  const { pending } = useFormStatus()
+  
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+    >
+      {pending ? (
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          Searching...
+        </div>
+      ) : (
+        'Search'
+      )}
+    </button>
+  )
 }
 
 export default function SearchInput({ searchTerm }: SearchInputProps) {
@@ -26,12 +48,7 @@ export default function SearchInput({ searchTerm }: SearchInputProps) {
           </svg>
         </div>
       </div>
-      <button
-        type="submit"
-        className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md"
-      >
-        Search
-      </button>
+      <SearchButton />
     </form>
   )
 }
