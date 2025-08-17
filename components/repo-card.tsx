@@ -23,45 +23,46 @@ export default function RepoCard({ repository }: RepoCardProps) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+    <div className="group bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-7 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300 ease-out">
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-xl font-bold text-slate-800 mb-3 leading-tight">
             <a 
               href={repository.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-blue-600 transition-colors"
+              className="hover:text-indigo-600 transition-colors duration-200 group-hover:text-indigo-700"
             >
-              {repository.owner}/{repository.name}
+              <span className="text-slate-500 font-medium">{repository.owner}/</span>
+              <span className="text-slate-900">{repository.name}</span>
             </a>
           </h3>
           {repository.description && (
-            <p className="text-gray-600 text-sm leading-relaxed mb-3">
+            <p className="text-slate-600 leading-relaxed line-clamp-3">
               {repository.description}
             </p>
           )}
         </div>
-      </div>
-      
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <div className="flex items-center space-x-4">
-          {repository.language && (
-            <span className="flex items-center">
-              <span className="w-3 h-3 rounded-full bg-blue-500 mr-1"></span>
-              {repository.language}
+        
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div className="flex items-center space-x-6">
+            {repository.language && (
+              <span className="flex items-center text-sm text-slate-600 font-medium">
+                <span className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-400 to-blue-500 mr-2 shadow-sm"></span>
+                {repository.language}
+              </span>
+            )}
+            <span className="flex items-center text-sm text-slate-600 font-medium">
+              <svg className="w-4 h-4 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              {repository.stars.toLocaleString()}
             </span>
-          )}
-          <span className="flex items-center">
-            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            {repository.stars}
+          </div>
+          <span className="text-sm text-slate-500 font-medium">
+            {formatDate(repository.lastUpdated)}
           </span>
         </div>
-        <span>
-          Updated {formatDate(repository.lastUpdated)}
-        </span>
       </div>
     </div>
   )
