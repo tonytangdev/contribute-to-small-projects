@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const skip = (validPage - 1) * validLimit
 
     // Build where clause for filtering
-    const whereClause: any = {}
+    const whereClause: Record<string, any> = {}
     
     if (language) {
       whereClause.language = language

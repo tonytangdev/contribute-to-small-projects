@@ -157,7 +157,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   )}
                   {searchTerm && (
                     <>
-                      {' '}matching "<span className="font-bold text-indigo-600">{searchTerm}</span>"
+                      {' '}matching &ldquo;<span className="font-bold text-indigo-600">{searchTerm}</span>&rdquo;
                     </>
                   )}
                 </p>

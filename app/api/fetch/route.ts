@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { GitHubClient } from '@/lib/github'
+import { GitHubClient, Repository } from '@/lib/github'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     console.log('Starting GitHub repository fetch...')
     
     // Fetch multiple pages to get more diverse repositories
-    const allRepositories: any[] = []
+    const allRepositories: Repository[] = []
     const pagesToFetch = 5 // Fetch 5 pages = 500 repositories max
     
     for (let page = 1; page <= pagesToFetch; page++) {
