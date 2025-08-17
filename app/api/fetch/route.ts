@@ -36,13 +36,10 @@ export async function POST(request: NextRequest) {
     
     console.log('Starting GitHub repository fetch...')
     
-    // Use different search strategies to get more diverse repositories
+    // Use fewer search strategies to reduce load and stay within timeout limits
     const searchStrategies = [
-      { minStars: 100, maxStars: 200, sortBy: 'updated' as const },
-      { minStars: 200, maxStars: 300, sortBy: 'stars' as const },
-      { minStars: 300, maxStars: 400, sortBy: 'forks' as const },
-      { minStars: 400, maxStars: 500, sortBy: 'updated' as const },
-      { minStars: 500, maxStars: 600, sortBy: 'stars' as const }
+      { minStars: 100, maxStars: 300, sortBy: 'updated' as const },
+      { minStars: 300, maxStars: 600, sortBy: 'stars' as const }
     ]
     
     console.log(`Fetching repositories using ${searchStrategies.length} different strategies...`)
@@ -100,14 +97,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Use batched database operations to avoid connection pool timeout
-    console.log(`Upserting ${allRepositories.length} repositories in batches...`)
-    const batchSize = 3 // Stay well under the 5 connection limit
+    // Use sequential database operations to avoid statement timeout
+    console.log(`Upserting ${allRepositories.length} repositories sequentially...`)
     
-    for (let i = 0; i < allRepositories.length; i += batchSize) {
-      const batch = allRepositories.slice(i, i + batchSize)
-      const upsertPromises = batch.map(repo => 
-        prisma.repository.upsert({
+    for (let i = 0; i < allRepositories.length; i++) {
+      const repo = allRepositories[i]
+      try {
+        await prisma.repository.upsert({
           where: { githubUrl: repo.githubUrl },
           update: {
             description: repo.description,
@@ -127,10 +123,14 @@ export async function POST(request: NextRequest) {
             lastUpdated: repo.lastUpdated,
           },
         })
-      )
-      
-      await Promise.all(upsertPromises)
-      console.log(`Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allRepositories.length / batchSize)}`)
+        
+        if ((i + 1) % 10 === 0) {
+          console.log(`Processed ${i + 1}/${allRepositories.length} repositories`)
+        }
+      } catch (error) {
+        console.error(`Failed to upsert repository ${repo.githubUrl}:`, error)
+        // Continue with other repositories
+      }
     }
     const totalProcessed = allRepositories.length
     const newlyAdded = newRepositories.length
