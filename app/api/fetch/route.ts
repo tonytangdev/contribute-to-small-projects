@@ -81,33 +81,41 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Create only new repositories in batches to avoid statement timeout
+    // Use single-connection sequential operations to avoid pool exhaustion
     let actualNewCount = 0
     
+    // Create new repositories one by one to ensure single connection usage
     if (newRepositories.length > 0) {
-      console.log(`Creating ${newRepositories.length} new repositories in batches...`)
+      console.log(`Creating ${newRepositories.length} new repositories sequentially...`)
       
-      const createBatchSize = 20 // Small batches for createMany
-      
-      for (let i = 0; i < newRepositories.length; i += createBatchSize) {
-        const batch = newRepositories.slice(i, i + createBatchSize)
-        
-        const result = await prisma.repository.createMany({
-          data: batch.map(repo => ({
-            name: repo.name,
-            owner: repo.owner,
-            description: repo.description,
-            language: repo.language,
-            stars: repo.stars,
-            contributors: null,
-            githubUrl: repo.githubUrl,
-            lastUpdated: repo.lastUpdated,
-          })),
-          skipDuplicates: true,
-        })
-        
-        actualNewCount += result.count
-        console.log(`Create batch ${Math.floor(i / createBatchSize) + 1}/${Math.ceil(newRepositories.length / createBatchSize)}: created ${result.count} repositories`)
+      for (let i = 0; i < newRepositories.length; i++) {
+        const repo = newRepositories[i]
+        try {
+          await prisma.repository.create({
+            data: {
+              name: repo.name,
+              owner: repo.owner,
+              description: repo.description,
+              language: repo.language,
+              stars: repo.stars,
+              contributors: null,
+              githubUrl: repo.githubUrl,
+              lastUpdated: repo.lastUpdated,
+            },
+          })
+          actualNewCount++
+          
+          if ((i + 1) % 10 === 0) {
+            console.log(`Created ${i + 1}/${newRepositories.length} new repositories`)
+          }
+        } catch (error: any) {
+          if (error.code === 'P2002') {
+            // Unique constraint violation - repository already exists, skip
+            console.log(`Skipped duplicate repository: ${repo.githubUrl}`)
+          } else {
+            console.error(`Failed to create repository ${repo.githubUrl}:`, error)
+          }
+        }
       }
       
       console.log(`Created ${actualNewCount} new repositories`)
@@ -115,17 +123,14 @@ export async function POST(request: NextRequest) {
       console.log(`No new repositories to create`)
     }
     
-    // Then update existing repositories in small batches to avoid connection issues
+    // Update existing repositories one by one to avoid connection issues
     if (existingRepositories.length > 0) {
-      console.log(`Updating ${existingRepositories.length} existing repositories in batches...`)
+      console.log(`Updating ${existingRepositories.length} existing repositories sequentially...`)
       
-      const batchSize = 5 // Small batches to stay under connection limit
-      
-      for (let i = 0; i < existingRepositories.length; i += batchSize) {
-        const batch = existingRepositories.slice(i, i + batchSize)
-        
-        const updatePromises = batch.map(repo =>
-          prisma.repository.updateMany({
+      for (let i = 0; i < existingRepositories.length; i++) {
+        const repo = existingRepositories[i]
+        try {
+          await prisma.repository.updateMany({
             where: { githubUrl: repo.githubUrl },
             data: {
               description: repo.description,
@@ -134,10 +139,13 @@ export async function POST(request: NextRequest) {
               lastUpdated: repo.lastUpdated,
             },
           })
-        )
-        
-        await Promise.all(updatePromises)
-        console.log(`Updated batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(existingRepositories.length / batchSize)}`)
+          
+          if ((i + 1) % 10 === 0) {
+            console.log(`Updated ${i + 1}/${existingRepositories.length} existing repositories`)
+          }
+        } catch (error) {
+          console.error(`Failed to update repository ${repo.githubUrl}:`, error)
+        }
       }
       
       console.log(`Updated ${existingRepositories.length} existing repositories`)
