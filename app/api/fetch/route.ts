@@ -81,12 +81,10 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Use single bulk operations for maximum efficiency
-    console.log(`Processing ${allRepositories.length} repositories with single bulk operation...`)
+    // Use single bulk operation - maximum efficiency!
+    console.log(`Processing ${allRepositories.length} repositories with single bulk createMany...`)
     
-    // Create all repositories (new ones will be inserted, existing ones skipped)
-    console.log(`Bulk creating/skipping ${allRepositories.length} repositories...`)
-    await prisma.repository.createMany({
+    const result = await prisma.repository.createMany({
       data: allRepositories.map(repo => ({
         name: repo.name,
         owner: repo.owner,
@@ -100,33 +98,15 @@ export async function POST(request: NextRequest) {
       skipDuplicates: true,
     })
     
-    // Update existing repositories sequentially to avoid connection pool issues
-    if (existingRepositories.length > 0) {
-      console.log(`Updating ${existingRepositories.length} existing repositories sequentially...`)
-      
-      for (const repo of existingRepositories) {
-        await prisma.repository.updateMany({
-          where: { githubUrl: repo.githubUrl },
-          data: {
-            description: repo.description,
-            language: repo.language,
-            stars: repo.stars,
-            lastUpdated: repo.lastUpdated,
-          },
-        })
-      }
-    }
-    const totalProcessed = allRepositories.length
-    const newlyAdded = newRepositories.length
-
-    console.log(`Successfully upserted ${totalProcessed} repositories (${newlyAdded} new, ${totalProcessed - newlyAdded} updated)`)
+    const actualNewCount = result.count
+    console.log(`Successfully created ${actualNewCount} new repositories, skipped ${allRepositories.length - actualNewCount} existing ones`)
 
     return NextResponse.json({
       success: true,
-      message: `Successfully fetched and stored ${totalProcessed} repositories (${newlyAdded} new, ${totalProcessed - newlyAdded} updated)`,
-      count: totalProcessed,
-      newRepositories: newlyAdded,
-      updatedRepositories: totalProcessed - newlyAdded
+      message: `Successfully processed ${allRepositories.length} repositories (${actualNewCount} new, ${allRepositories.length - actualNewCount} skipped)`,
+      totalFetched: allRepositories.length,
+      newRepositories: actualNewCount,
+      skippedRepositories: allRepositories.length - actualNewCount
     })
 
   } catch (error) {
