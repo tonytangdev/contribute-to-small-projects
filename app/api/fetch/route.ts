@@ -81,30 +81,29 @@ export async function POST(request: NextRequest) {
     // Skip fetching contributors to reduce API load and processing time
     console.log(`Skipping contributor fetch to optimize performance`)
 
-    // Use efficient bulk operations with single connection
-    console.log(`Processing ${allRepositories.length} repositories with bulk operations...`)
+    // Use single bulk operations for maximum efficiency
+    console.log(`Processing ${allRepositories.length} repositories with single bulk operation...`)
     
-    // First, try to create all new repositories
-    if (newRepositories.length > 0) {
-      console.log(`Creating ${newRepositories.length} new repositories...`)
-      await prisma.repository.createMany({
-        data: newRepositories.map(repo => ({
-          name: repo.name,
-          owner: repo.owner,
-          description: repo.description,
-          language: repo.language,
-          stars: repo.stars,
-          contributors: null,
-          githubUrl: repo.githubUrl,
-          lastUpdated: repo.lastUpdated,
-        })),
-        skipDuplicates: true,
-      })
-    }
+    // Create all repositories (new ones will be inserted, existing ones skipped)
+    console.log(`Bulk creating/skipping ${allRepositories.length} repositories...`)
+    await prisma.repository.createMany({
+      data: allRepositories.map(repo => ({
+        name: repo.name,
+        owner: repo.owner,
+        description: repo.description,
+        language: repo.language,
+        stars: repo.stars,
+        contributors: null,
+        githubUrl: repo.githubUrl,
+        lastUpdated: repo.lastUpdated,
+      })),
+      skipDuplicates: true,
+    })
     
-    // Then update existing repositories
+    // Update existing repositories sequentially to avoid connection pool issues
     if (existingRepositories.length > 0) {
-      console.log(`Updating ${existingRepositories.length} existing repositories...`)
+      console.log(`Updating ${existingRepositories.length} existing repositories sequentially...`)
+      
       for (const repo of existingRepositories) {
         await prisma.repository.updateMany({
           where: { githubUrl: repo.githubUrl },
