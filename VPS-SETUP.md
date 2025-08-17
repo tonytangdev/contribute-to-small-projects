@@ -72,21 +72,22 @@ docker-compose -f docker-compose.vps.yml logs repository-fetcher
 
 The Docker Compose setup includes:
 
-1. **repository-fetcher**: Cron service that runs the fetch script daily at 2 AM
+1. **repository-fetcher**: Cron service that runs the fetch script every hour
 2. **app**: Next.js web application (optional)
 
 **Note**: Uses your Supabase PostgreSQL database instead of a local database.
 
 ## Cron Schedule
 
-The repository fetcher runs automatically every day at 2:00 AM server time. You can modify the schedule in `scripts/crontab`:
+The repository fetcher runs automatically every hour. You can modify the schedule in `scripts/crontab`:
 
 ```cron
-# Current: Daily at 2 AM
-0 2 * * * cd /app && node scripts/fetch-repositories.js >> /var/log/cron/fetch-repositories.log 2>&1
+# Current: Every hour
+0 * * * * cd /app && node scripts/fetch-repositories.js >> /var/log/cron/fetch-repositories.log 2>&1
 
 # Examples:
 # Every 6 hours: 0 */6 * * *
+# Daily at 2 AM: 0 2 * * *
 # Twice daily: 0 2,14 * * *
 ```
 
