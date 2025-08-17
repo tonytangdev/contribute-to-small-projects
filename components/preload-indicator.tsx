@@ -25,9 +25,8 @@ export default function PreloadIndicator() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      <div className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium">
+      <div className="bg-indigo-600/80 backdrop-blur-sm p-2 rounded-full shadow-lg">
         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        Preloading next page...
       </div>
     </div>
   )

@@ -3,7 +3,7 @@ import RepoCardSkeleton from './repo-card-skeleton'
 export default function PageSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <header className="text-center mb-16">
           <div className="space-y-8">
             <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">

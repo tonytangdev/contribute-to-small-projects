@@ -1,6 +1,6 @@
 export default function RepoCardSkeleton() {
   return (
-    <div className="group relative overflow-hidden rounded-3xl bg-white/60 backdrop-blur-sm border border-slate-200/60 p-8 transition-all duration-300 animate-pulse">
+    <div className="group relative overflow-hidden rounded-2xl bg-white/60 backdrop-blur-sm border border-slate-200/60 p-4 sm:p-6 md:p-7 transition-all duration-300 animate-pulse">
       <div className="space-y-6">
         {/* Header with owner/name */}
         <div className="flex items-start justify-between">
