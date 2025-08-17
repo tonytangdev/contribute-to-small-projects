@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import RepoCard from '@/components/repo-card'
+import LanguageSelect from '@/components/language-select'
 
 interface Repository {
   id: string
@@ -26,13 +27,22 @@ interface RepositoryResponse {
   pagination: PaginationInfo
 }
 
-async function getRepositories(page = 1): Promise<RepositoryResponse> {
+async function getRepositories(page = 1, language?: string): Promise<RepositoryResponse> {
   try {
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000'
     
-    const response = await fetch(`${baseUrl}/api/repos?page=${page}&limit=25`, {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: '25'
+    })
+    
+    if (language) {
+      params.set('language', language)
+    }
+    
+    const response = await fetch(`${baseUrl}/api/repos?${params}`, {
       cache: 'no-store'
     })
     
@@ -57,13 +67,36 @@ async function getRepositories(page = 1): Promise<RepositoryResponse> {
   }
 }
 
+async function getLanguages(): Promise<string[]> {
+  try {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    
+    const response = await fetch(`${baseUrl}/api/languages`, {
+      cache: 'no-store'
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch languages')
+    }
+    
+    return response.json()
+  } catch (error) {
+    console.error('Error fetching languages:', error)
+    return []
+  }
+}
+
 interface HomeProps {
-  searchParams: { page?: string }
+  searchParams: { page?: string, language?: string }
 }
 
 export default async function Home({ searchParams }: HomeProps) {
   const currentPage = parseInt(searchParams.page || '1', 10)
-  const data = await getRepositories(currentPage)
+  const selectedLanguage = searchParams.language
+  const data = await getRepositories(currentPage, selectedLanguage)
+  const languages = await getLanguages()
   const { repositories, pagination } = data
 
   return (
@@ -73,9 +106,14 @@ export default async function Home({ searchParams }: HomeProps) {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Contribute to Small Projects
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
             Discover open source projects with 100-600 stars - perfect for your first contributions
           </p>
+          
+          {/* Language Filter */}
+          <div className="flex justify-center mb-8">
+            <LanguageSelect languages={languages} selectedLanguage={selectedLanguage} />
+          </div>
         </header>
 
         {repositories.length === 0 ? (
@@ -91,7 +129,8 @@ export default async function Home({ searchParams }: HomeProps) {
           <>
             <div className="text-center mb-8">
               <p className="text-gray-600">
-                Showing {repositories.length} of {pagination.totalCount} repositories (Page {pagination.currentPage} of {pagination.totalPages})
+                Showing {repositories.length} of {pagination.totalCount} repositories 
+                {selectedLanguage && ` for ${selectedLanguage}`} (Page {pagination.currentPage} of {pagination.totalPages})
               </p>
             </div>
             
@@ -105,7 +144,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="flex justify-center items-center gap-4 mt-12">
               {pagination.hasPrevPage ? (
                 <Link 
-                  href={`/?page=${pagination.currentPage - 1}`}
+                  href={`/?page=${pagination.currentPage - 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}`}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   ← Previous
@@ -122,7 +161,7 @@ export default async function Home({ searchParams }: HomeProps) {
               
               {pagination.hasNextPage ? (
                 <Link 
-                  href={`/?page=${pagination.currentPage + 1}`}
+                  href={`/?page=${pagination.currentPage + 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}`}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Next →
