@@ -47,39 +47,4 @@ while true; do
   wait $CRON_PID
   echo "Cron died, restarting..."
   sleep 5
-doneroot@srv645048:~/github/contribute-to-small-projects# cat Dockerfile.cron
-FROM node:18-alpine
-
-# Install cron
-RUN apk add --no-cache dcron
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Copy scripts
-COPY scripts ./scripts/
-
-# Make script executable
-RUN chmod +x ./scripts/fetch-repositories.js
-
-# Create log directory
-RUN mkdir -p /var/log/cron
-
-# Copy crontab file and startup script
-COPY scripts/crontab /etc/crontabs/root
-COPY scripts/start-cron.sh /start-cron.sh
-RUN chmod +x /start-cron.sh
-
-# Override entrypoint and start cron with our script
-ENTRYPOINT []
-CMD ["/start-cron.sh"]
+done

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   repository-fetcher:
@@ -13,18 +13,4 @@ services:
     volumes:
       - cron_logs:/var/log/cron
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: contribute-app
-    environment:
-      DATABASE_URL: "${DATABASE_URL}"
-      GITHUB_TOKEN: "${GITHUB_TOKEN}"
-      CRON_SECRET: "${CRON_SECRET}"
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-
-volumes:
-  cron_logs:
+volumes: cron_logs
