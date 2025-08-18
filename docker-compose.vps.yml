@@ -13,4 +13,5 @@ services:
     volumes:
       - cron_logs:/var/log/cron
 
-volumes: cron_logs
+volumes:
+  cron_logs:
