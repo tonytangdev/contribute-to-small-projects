@@ -15,14 +15,22 @@ export async function GET(request: NextRequest) {
     
     const skip = (validPage - 1) * validLimit
 
+    // Calculate date 1 week ago
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+
     // Build where clause for filtering
     const whereClause: {
       language?: string;
+      lastUpdated?: { gte: Date };
       OR?: Array<{
         name?: { contains: string; mode: 'insensitive' };
         description?: { contains: string; mode: 'insensitive' };
       }>;
-    } = {}
+    } = {
+      // Only show repositories updated within the last week
+      lastUpdated: { gte: oneWeekAgo }
+    }
     
     if (language) {
       whereClause.language = language

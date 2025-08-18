@@ -27,7 +27,12 @@ class GitHubClient {
     sortBy = "updated",
   ) {
     try {
-      const query = `stars:${minStars}..${maxStars} is:public`;
+      // Calculate date 1 week ago
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const dateFilter = oneWeekAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      const query = `stars:${minStars}..${maxStars} is:public pushed:>${dateFilter}`;
       const params = new URLSearchParams({
         q: query,
         sort: sortBy,
@@ -120,8 +125,11 @@ async function main() {
 
     // Use search strategies to get diverse repositories
     const searchStrategies = [
-      { minStars: 100, maxStars: 300, sortBy: "updated" },
-      { minStars: 300, maxStars: 600, sortBy: "stars" },
+      { minStars: 100, maxStars: 200, sortBy: "updated" },
+      { minStars: 200, maxStars: 300, sortBy: "stars" },
+      { minStars: 300, maxStars: 400, sortBy: "updated" },
+      { minStars: 400, maxStars: 500, sortBy: "stars" },
+      { minStars: 500, maxStars: 600, sortBy: "updated" },
     ];
 
     console.log(
