@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import RepoCard from '@/components/repo-card'
 import LanguageSelect from '@/components/language-select'
 import SearchInput from '@/components/search-input'
@@ -7,6 +8,52 @@ import PreloadIndicator from '@/components/preload-indicator'
 
 // Enable ISR for better performance
 export const revalidate = 300 // Revalidate every 5 minutes
+
+export async function generateMetadata({ searchParams }: HomeProps): Promise<Metadata> {
+  const params = await searchParams
+  const language = params.language
+  const search = params.search
+  const page = parseInt(params.page || '1', 10)
+
+  let title = 'Contribute to Small Projects'
+  let description = 'Discover small open source projects (100-600 stars) perfect for your first contributions'
+
+  if (language && search) {
+    title = `${language} Projects matching "${search}"`
+    description = `Browse ${language} open source projects matching "${search}" with 100-600 stars - perfect for beginners`
+  } else if (language) {
+    title = `${language} Projects`
+    description = `Browse ${language} open source projects with 100-600 stars - perfect for first-time contributors`
+  } else if (search) {
+    title = `Projects matching "${search}"`
+    description = `Browse open source projects matching "${search}" with 100-600 stars - ideal for beginner contributions`
+  } else if (page > 1) {
+    title = `Projects - Page ${page}`
+    description = `Discover more small open source projects (100-600 stars) - page ${page}`
+  }
+
+  const url = new URL('https://www.contribute-to-small-projects.com')
+  if (language) url.searchParams.set('language', language)
+  if (search) url.searchParams.set('search', search)
+  if (page > 1) url.searchParams.set('page', page.toString())
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: url.toString(),
+    },
+    twitter: {
+      title,
+      description,
+    },
+    alternates: {
+      canonical: url.toString(),
+    },
+  }
+}
 
 interface Repository {
   id: string
@@ -116,8 +163,43 @@ export default async function Home({ searchParams }: HomeProps) {
   const languages = await getLanguages()
   const { repositories, pagination } = data
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://www.contribute-to-small-projects.com/#website',
+        url: 'https://www.contribute-to-small-projects.com',
+        name: 'Contribute to Small Projects',
+        description: 'Discover small open source projects (100-600 stars) perfect for your first contributions',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://www.contribute-to-small-projects.com/?search={search_term_string}'
+          },
+          'query-input': 'required name=search_term_string'
+        }
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://www.contribute-to-small-projects.com/#organization',
+        name: 'Contribute to Small Projects',
+        url: 'https://www.contribute-to-small-projects.com',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://www.contribute-to-small-projects.com/favicon.ico'
+        }
+      }
+    ]
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <header className="text-center mb-16">
           <div className="space-y-8">
