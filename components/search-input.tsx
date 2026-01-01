@@ -39,11 +39,12 @@ export default function SearchInput({ searchTerm }: SearchInputProps) {
           type="text"
           name="search"
           placeholder="Search repositories..."
+          aria-label="Search repositories"
           defaultValue={searchTerm || ''}
           className="w-full appearance-none bg-white/80 backdrop-blur-sm border-2 border-slate-200 rounded-xl px-6 py-3 pl-12 text-slate-700 font-medium shadow-sm hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200"
         />
         <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>

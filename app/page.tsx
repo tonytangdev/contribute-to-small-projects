@@ -37,6 +37,20 @@ export async function generateMetadata({ searchParams }: HomeProps): Promise<Met
   if (search) url.searchParams.set('search', search)
   if (page > 1) url.searchParams.set('page', page.toString())
 
+  const baseUrl = 'https://www.contribute-to-small-projects.com'
+  const alternates: Metadata['alternates'] = {
+    canonical: url.toString(),
+  }
+
+  // Add rel prev/next for pagination
+  if (page > 1) {
+    const prevUrl = new URL(baseUrl)
+    if (language) prevUrl.searchParams.set('language', language)
+    if (search) prevUrl.searchParams.set('search', search)
+    if (page > 2) prevUrl.searchParams.set('page', (page - 1).toString())
+    alternates.types = { ...alternates.types, 'prev': prevUrl.toString() }
+  }
+
   return {
     title,
     description,
@@ -49,9 +63,7 @@ export async function generateMetadata({ searchParams }: HomeProps): Promise<Met
       title,
       description,
     },
-    alternates: {
-      canonical: url.toString(),
-    },
+    alternates,
   }
 }
 
@@ -163,44 +175,80 @@ export default async function Home({ searchParams }: HomeProps) {
   const languages = await getLanguages()
   const { repositories, pagination } = data
 
+  const baseUrl = 'https://www.contribute-to-small-projects.com'
+
+  // Build breadcrumb items
+  const breadcrumbItems = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl }
+  ]
+  if (selectedLanguage) {
+    breadcrumbItems.push({ '@type': 'ListItem', position: 2, name: selectedLanguage, item: `${baseUrl}/?language=${encodeURIComponent(selectedLanguage)}` })
+  }
+  if (currentPage > 1) {
+    breadcrumbItems.push({ '@type': 'ListItem', position: breadcrumbItems.length + 1, name: `Page ${currentPage}`, item: `${baseUrl}/?page=${currentPage}${selectedLanguage ? `&language=${encodeURIComponent(selectedLanguage)}` : ''}` })
+  }
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': 'https://www.contribute-to-small-projects.com/#website',
-        url: 'https://www.contribute-to-small-projects.com',
+        '@id': `${baseUrl}/#website`,
+        url: baseUrl,
         name: 'Contribute to Small Projects',
         description: 'Discover small open source projects (100-600 stars) perfect for your first contributions',
+        inLanguage: 'en',
         potentialAction: {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: 'https://www.contribute-to-small-projects.com/?search={search_term_string}'
+            urlTemplate: `${baseUrl}/?search={search_term_string}`
           },
           'query-input': 'required name=search_term_string'
         }
       },
       {
         '@type': 'Organization',
-        '@id': 'https://www.contribute-to-small-projects.com/#organization',
+        '@id': `${baseUrl}/#organization`,
         name: 'Contribute to Small Projects',
-        url: 'https://www.contribute-to-small-projects.com',
+        url: baseUrl,
         logo: {
           '@type': 'ImageObject',
-          url: 'https://www.contribute-to-small-projects.com/favicon.ico'
+          url: `${baseUrl}/favicon.ico`
         }
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbItems
+      },
+      {
+        '@type': 'ItemList',
+        itemListElement: repositories.slice(0, 10).map((repo, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          item: {
+            '@type': 'SoftwareSourceCode',
+            name: `${repo.owner}/${repo.name}`,
+            description: repo.description,
+            url: repo.githubUrl,
+            programmingLanguage: repo.language,
+            codeRepository: repo.githubUrl
+          }
+        }))
       }
     ]
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg">
+        Skip to main content
+      </a>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <header className="text-center mb-16">
           <div className="space-y-8">
             <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
@@ -274,7 +322,7 @@ export default async function Home({ searchParams }: HomeProps) {
             />
             
             {/* Pagination Controls */}
-            <div className="flex justify-center items-center gap-3 sm:gap-6 mt-12 sm:mt-16 relative">
+            <nav aria-label="Pagination" className="flex justify-center items-center gap-3 sm:gap-6 mt-12 sm:mt-16 relative">
               {pagination.hasPrevPage ? (
                 <Link 
                   href={`/?page=${pagination.currentPage - 1}${selectedLanguage ? `&language=${selectedLanguage}` : ''}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`}
@@ -288,17 +336,17 @@ export default async function Home({ searchParams }: HomeProps) {
                   <span className="sm:hidden">Prev</span>
                 </Link>
               ) : (
-                <div className="flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl cursor-not-allowed font-semibold text-sm sm:text-base">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div aria-disabled="true" className="flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl cursor-not-allowed font-semibold text-sm sm:text-base">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                   <span className="hidden sm:inline">Previous</span>
                   <span className="sm:hidden">Prev</span>
                 </div>
               )}
-              
+
               <div className="flex items-center gap-1 sm:gap-2">
-                <span className="px-3 py-2 sm:px-6 sm:py-4 bg-indigo-100 text-indigo-800 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg border-2 border-indigo-200">
+                <span aria-current="page" className="px-3 py-2 sm:px-6 sm:py-4 bg-indigo-100 text-indigo-800 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg border-2 border-indigo-200">
                   {pagination.currentPage}
                 </span>
                 <span className="text-slate-400 font-medium text-sm sm:text-base">of</span>
@@ -320,15 +368,15 @@ export default async function Home({ searchParams }: HomeProps) {
                   </svg>
                 </Link>
               ) : (
-                <div className="flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl cursor-not-allowed font-semibold text-sm sm:text-base">
+                <div aria-disabled="true" className="flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl cursor-not-allowed font-semibold text-sm sm:text-base">
                   <span className="hidden sm:inline">Next</span>
                   <span className="sm:hidden">Next</span>
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               )}
-            </div>
+            </nav>
             
             {pagination.hasNextPage && (
               <div className="text-center mt-8">
@@ -344,7 +392,7 @@ export default async function Home({ searchParams }: HomeProps) {
         
         {/* Preload Indicator */}
         <PreloadIndicator />
-      </div>
+      </main>
     </div>
   )
 }

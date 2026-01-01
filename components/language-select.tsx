@@ -41,9 +41,9 @@ export default function LanguageSelect({ languages, selectedLanguage }: Language
         </select>
         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
           {isPending ? (
-            <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
           ) : (
-            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           )}
