@@ -20,6 +20,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.contribute-to-small-projects.com'),
+  verification: {
+    google: '_9bW4Z_ka_jSvDwgw-tb9ykkSQaWHCQv_qxlk-cUNOQ',
+  },
   title: {
     default: "Contribute to Small Projects",
     template: "%s | Contribute to Small Projects"
