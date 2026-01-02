@@ -11,7 +11,7 @@ interface SponsorSidebarProps {
 }
 
 export default function SponsorSidebar({ sponsors, position, onOpenModal }: SponsorSidebarProps) {
-  const maxDisplay = 10
+  const maxDisplay = 5
   const displaySponsors = sponsors.slice(0, maxDisplay)
   const remainingSpots = maxDisplay - displaySponsors.length
 

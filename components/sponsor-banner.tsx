@@ -1,7 +1,8 @@
 'use client'
 
 import { Sponsor } from '@/types/sponsor'
-import SponsorRotator from './sponsor-rotator'
+import SponsorCard from './sponsor-card'
+import SponsorPlaceholder from './sponsor-placeholder'
 
 interface SponsorBannerProps {
   sponsors: Sponsor[]
@@ -10,6 +11,10 @@ interface SponsorBannerProps {
 }
 
 export default function SponsorBanner({ sponsors, position, onOpenModal }: SponsorBannerProps) {
+  const maxDisplay = 2
+  const displaySponsors = sponsors.slice(0, maxDisplay)
+  const shouldShowPlaceholder = displaySponsors.length < maxDisplay
+
   return (
     <div
       className={`
@@ -18,7 +23,19 @@ export default function SponsorBanner({ sponsors, position, onOpenModal }: Spons
       `}
       aria-label={`${position} sponsor banner`}
     >
-      <SponsorRotator sponsors={sponsors} variant="banner" onOpenModal={onOpenModal} maxSpots={10} />
+      <div className="flex gap-3 max-w-4xl mx-auto">
+        {displaySponsors.map((sponsor) => (
+          <div key={sponsor.id} className="flex-1 min-w-0">
+            <SponsorCard sponsor={sponsor} variant="banner" />
+          </div>
+        ))}
+
+        {shouldShowPlaceholder && (
+          <div className="flex-1 min-w-0">
+            <SponsorPlaceholder variant="banner" onOpenModal={onOpenModal} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
