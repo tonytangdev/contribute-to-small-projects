@@ -30,8 +30,8 @@ export default function SponsorBanner({
       aria-label={`${position} sponsor banner`}
     >
       <div
-        className="flex"
-        style={{ animation: `marquee ${duration}s linear infinite` }}
+        className="flex animate-marquee"
+        style={{ animationDuration: `${duration}s` }}
       >
         {/* First set */}
         <div className="flex gap-4 px-4 flex-shrink-0">
