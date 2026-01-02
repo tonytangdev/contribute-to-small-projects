@@ -1,41 +1,113 @@
-'use client'
+"use client";
 
-import { Sponsor } from '@/types/sponsor'
-import SponsorCard from './sponsor-card'
-import SponsorPlaceholder from './sponsor-placeholder'
+import Image from "next/image";
+import { Sponsor } from "@/types/sponsor";
 
 interface SponsorBannerProps {
-  sponsors: Sponsor[]
-  position: 'top' | 'bottom'
-  onOpenModal: () => void
+  sponsors: Sponsor[];
+  position: "top" | "bottom";
+  onOpenModal: () => void;
 }
 
-export default function SponsorBanner({ sponsors, position, onOpenModal }: SponsorBannerProps) {
-  const maxDisplay = 2
-  const displaySponsors = sponsors.slice(0, maxDisplay)
-  const shouldShowPlaceholder = displaySponsors.length < maxDisplay
+export default function SponsorBanner({
+  sponsors,
+  position,
+  onOpenModal,
+}: SponsorBannerProps) {
+  // First set: placeholder + sponsors, Second set: placeholder + sponsors (for seamless loop)
+  const firstSet = [null, ...sponsors];
+  const secondSet = [null, ...sponsors];
+
+  // Dynamic duration: 5s per item
+  const duration = (sponsors.length + 1) * 5;
 
   return (
     <div
       className={`
-        xl:hidden px-4 py-3 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100
-        ${position === 'top' ? 'sticky top-0 z-40 shadow-sm' : 'sticky bottom-0 z-40 shadow-sm'}
+        xl:hidden overflow-hidden py-3
+        ${position === "top" ? "sticky top-0 z-40 bg-white/80 backdrop-blur-sm shadow-sm" : "sticky bottom-0 z-40 bg-white/80 backdrop-blur-sm shadow-sm"}
       `}
       aria-label={`${position} sponsor banner`}
     >
-      <div className="flex gap-3 max-w-4xl mx-auto">
-        {displaySponsors.map((sponsor) => (
-          <div key={sponsor.id} className="flex-1 min-w-0">
-            <SponsorCard sponsor={sponsor} variant="banner" />
-          </div>
-        ))}
-
-        {shouldShowPlaceholder && (
-          <div className="flex-1 min-w-0">
-            <SponsorPlaceholder variant="banner" onOpenModal={onOpenModal} />
-          </div>
-        )}
+      <div
+        className="flex"
+        style={{ animation: `marquee ${duration}s linear infinite` }}
+      >
+        {/* First set */}
+        <div className="flex gap-4 px-4 flex-shrink-0">
+          {firstSet.map((sponsor, i) =>
+            sponsor ? (
+              <a
+                key={`first-${sponsor.id}-${i}`}
+                href={sponsor.targetUrl}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="flex items-center gap-2.5 px-5 py-2.5 flex-shrink-0 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 transition-colors"
+              >
+                <div className="w-5 h-5 relative flex-shrink-0">
+                  <Image
+                    src={sponsor.logoUrl}
+                    alt={`${sponsor.name} logo`}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-sm font-medium text-slate-800 whitespace-nowrap">
+                  {sponsor.name}
+                </span>
+              </a>
+            ) : (
+              <button
+                key={`first-placeholder-${i}`}
+                onClick={onOpenModal}
+                className="flex items-center gap-2.5 px-5 py-2.5 flex-shrink-0 bg-indigo-100 hover:bg-indigo-200 rounded-xl border border-indigo-300 transition-colors"
+              >
+                <span className="text-indigo-600 text-lg">+</span>
+                <span className="text-sm font-medium text-indigo-700 whitespace-nowrap">
+                  Your Ad Here
+                </span>
+              </button>
+            ),
+          )}
+        </div>
+        {/* Second set (duplicate for seamless loop) */}
+        <div className="flex gap-4 px-4 flex-shrink-0">
+          {secondSet.map((sponsor, i) =>
+            sponsor ? (
+              <a
+                key={`second-${sponsor.id}-${i}`}
+                href={sponsor.targetUrl}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="flex items-center gap-2.5 px-5 py-2.5 flex-shrink-0 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 transition-colors"
+              >
+                <div className="w-5 h-5 relative flex-shrink-0">
+                  <Image
+                    src={sponsor.logoUrl}
+                    alt={`${sponsor.name} logo`}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-sm font-medium text-slate-800 whitespace-nowrap">
+                  {sponsor.name}
+                </span>
+              </a>
+            ) : (
+              <button
+                key={`second-placeholder-${i}`}
+                onClick={onOpenModal}
+                className="flex items-center gap-2.5 px-5 py-2.5 flex-shrink-0 bg-indigo-100 hover:bg-indigo-200 rounded-xl border border-indigo-300 transition-colors"
+              >
+                <span className="text-indigo-600 text-lg">+</span>
+                <span className="text-sm font-medium text-indigo-700 whitespace-nowrap">
+                  Your Ad Here
+                </span>
+              </button>
+            ),
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }
