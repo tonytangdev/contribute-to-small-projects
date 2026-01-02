@@ -5,6 +5,7 @@ import LanguageSelect from '@/components/language-select'
 import SearchInput from '@/components/search-input'
 import PaginationPreloader from '@/components/pagination-preloader'
 import PreloadIndicator from '@/components/preload-indicator'
+import SponsorsProvider from '@/components/sponsors-provider'
 
 // Enable ISR for better performance
 export const revalidate = 300 // Revalidate every 5 minutes
@@ -248,7 +249,8 @@ export default async function Home({ searchParams }: HomeProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <SponsorsProvider>
+        <main id="main-content" className="px-4 sm:px-6 py-12">
         <header className="text-center mb-16">
           <div className="space-y-8">
             <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
@@ -392,7 +394,8 @@ export default async function Home({ searchParams }: HomeProps) {
         
         {/* Preload Indicator */}
         <PreloadIndicator />
-      </main>
+        </main>
+      </SponsorsProvider>
     </div>
   )
 }
