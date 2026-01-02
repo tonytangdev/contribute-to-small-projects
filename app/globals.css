@@ -1,30 +1,84 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #ffffff;
+    --foreground: #171717;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
 }
 
-html, body {
-  overflow-x: hidden;
+html,
+body {
+    overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes marquee-fast {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-350%);
+    }
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-150%);
+    }
+}
+
+.animate-marquee {
+    animation: marquee-fast 20s linear infinite;
+}
+
+@media (min-width: 768px) {
+    .animate-marquee {
+        animation: marquee 20s linear infinite;
+    }
+}
+
+.animate-marquee:hover {
+    animation-play-state: paused;
+}
+
+/* Flip animation for desktop sponsor cards */
+.perspective-1000 {
+    perspective: 1000px;
+}
+
+@keyframes flip {
+    0% {
+        transform: rotateY(0deg);
+    }
+    50% {
+        transform: rotateY(90deg);
+    }
+    100% {
+        transform: rotateY(0deg);
+    }
+}
+
+.animate-flip {
+    animation: flip 0.6s ease-in-out;
 }
