@@ -24,7 +24,7 @@ export default function SponsorBanner({
   return (
     <div
       className={`
-        xl:hidden overflow-hidden py-3
+        lg:hidden overflow-hidden py-3
         ${position === "top" ? "sticky top-0 z-40 bg-white/80 backdrop-blur-sm shadow-sm" : "sticky bottom-0 z-40 bg-white/80 backdrop-blur-sm shadow-sm"}
       `}
       aria-label={`${position} sponsor banner`}
