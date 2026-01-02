@@ -14,9 +14,9 @@ export default function SponsorBanner({
   position,
   onOpenModal,
 }: SponsorBannerProps) {
-  // First set: placeholder + sponsors, Second set: placeholder + sponsors (for seamless loop)
-  const firstSet = [null, ...sponsors];
-  const secondSet = [null, ...sponsors];
+  // First set: sponsors + placeholder, Second set: sponsors + placeholder (for seamless loop)
+  const firstSet = [...sponsors, null];
+  const secondSet = [...sponsors, null];
 
   // Dynamic duration: 5s per item
   const duration = (sponsors.length + 1) * 5;
