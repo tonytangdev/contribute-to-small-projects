@@ -99,7 +99,7 @@ export default function SponsorPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder:text-slate-400"
                     placeholder="Acme Inc."
                   />
                 </div>
@@ -114,7 +114,7 @@ export default function SponsorPage() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none bg-white"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none bg-white text-slate-900 placeholder:text-slate-400"
                     placeholder="Brief description of your company (optional)"
                   />
                   <p className="text-xs text-slate-500 mt-1">
@@ -133,7 +133,7 @@ export default function SponsorPage() {
                     value={formData.logoUrl}
                     onChange={(e) => handleLogoUrlChange(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder:text-slate-400"
                     placeholder="https://example.com/logo.png"
                   />
                   <p className="text-xs text-slate-500 mt-1">
@@ -152,7 +152,7 @@ export default function SponsorPage() {
                     value={formData.targetUrl}
                     onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder:text-slate-400"
                     placeholder="https://example.com"
                   />
                   <p className="text-xs text-slate-500 mt-1">
@@ -171,7 +171,7 @@ export default function SponsorPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder:text-slate-400"
                     placeholder="your@email.com"
                   />
                   <p className="text-xs text-slate-500 mt-1">
