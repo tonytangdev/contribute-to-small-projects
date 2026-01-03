@@ -224,7 +224,7 @@ export default function SponsorPage() {
                       id: 'preview',
                       name: formData.name || 'Your Company',
                       description: formData.description || 'Your description',
-                      logoUrl: logoPreview || 'https://via.placeholder.com/150',
+                      logoUrl: logoPreview,
                       targetUrl: formData.targetUrl || '#',
                       isActive: true,
                       priority: 0,

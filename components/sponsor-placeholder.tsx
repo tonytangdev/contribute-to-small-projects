@@ -15,7 +15,7 @@ export default function SponsorPlaceholder({ variant = 'sidebar', onOpenModal }:
         w-full bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-dashed border-indigo-200
         rounded-xl p-3 hover:bg-gradient-to-br hover:from-indigo-100 hover:to-blue-100
         hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5
-        transition-all duration-300 group
+        transition-all duration-300 group cursor-pointer
         ${isBanner ? 'flex items-center gap-3' : 'text-center'}
       `}
     >
