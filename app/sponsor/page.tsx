@@ -2,8 +2,8 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
+import SponsorCard from '@/components/sponsor-card'
 
 export default function SponsorPage() {
   const router = useRouter()
@@ -219,91 +219,30 @@ export default function SponsorPage() {
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Live Preview</h3>
               <div className="space-y-4">
-                {/* Sponsor Card Preview */}
-                <div className="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 rounded-xl border border-indigo-200/60">
-                  <div className="flex items-center gap-4">
-                    {logoPreview ? (
-                      <div className="w-16 h-16 flex-shrink-0 bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                        <Image
-                          src={logoPreview}
-                          alt={formData.name || 'Logo preview'}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-contain"
-                          unoptimized
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 flex-shrink-0 bg-slate-200 rounded-xl flex items-center justify-center">
-                        <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-slate-900 truncate">
-                        {formData.name || 'Your Company Name'}
-                      </h4>
-                      <p className="text-sm text-slate-600 line-clamp-2">
-                        {formData.description || 'Your company description will appear here'}
-                      </p>
-                    </div>
-                  </div>
+                {/* Actual Sponsor Card Component */}
+                <div className="max-w-[200px] mx-auto">
+                  <SponsorCard
+                    sponsor={{
+                      id: 'preview',
+                      name: formData.name || 'Your Company',
+                      description: formData.description || 'Your description',
+                      logoUrl: logoPreview || 'https://via.placeholder.com/150',
+                      targetUrl: formData.targetUrl || '#',
+                      isActive: true,
+                      priority: 0,
+                      startDate: new Date().toISOString(),
+                      endDate: new Date().toISOString(),
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                      email: null,
+                      stripeSessionId: null,
+                    }}
+                    variant="sidebar"
+                  />
                 </div>
                 <p className="text-xs text-slate-500 text-center">
-                  This is how your sponsor card will appear on the site
+                  This is how your sponsor card will appear
                 </p>
-              </div>
-            </div>
-
-            {/* What's Included */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">What's Included</h3>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">30-day sponsorship</p>
-                    <p className="text-xs text-slate-600">Your brand visible for a full month</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Desktop & mobile placement</p>
-                    <p className="text-xs text-slate-600">Sidebars on desktop, banners on mobile</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Fair rotation system</p>
-                    <p className="text-xs text-slate-600">Equal visibility with all sponsors</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Developer audience</p>
-                    <p className="text-xs text-slate-600">Reach engaged open source contributors</p>
-                  </div>
-                </div>
               </div>
             </div>
 
