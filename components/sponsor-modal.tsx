@@ -44,7 +44,7 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -61,7 +61,7 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
         {/* Content */}
         <div className="p-8">
           {/* Header */}
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-2">
             Sponsor This Platform
           </h2>
           <p className="text-slate-600 mb-6">
@@ -69,10 +69,10 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
           </p>
 
           {/* Availability */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl mb-6">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 border border-slate-200/60 rounded-xl mb-6">
             <div>
               <p className="text-sm text-slate-600">Available spots</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.availableSpots} of {stats.maxSpots}</p>
+              <p className="text-2xl font-bold text-indigo-600">{stats.availableSpots} of {stats.maxSpots}</p>
             </div>
             {stats.availableSpots === 0 && (
               <div className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
@@ -84,7 +84,7 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
           {/* CTA */}
           <a
             href="/sponsor"
-            className="block w-full py-3 px-4 bg-slate-900 text-white text-center font-medium rounded-xl hover:bg-slate-800 transition-colors"
+            className="block w-full py-3 px-4 bg-indigo-600 text-white text-center font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
           >
             Become a Sponsor
           </a>
