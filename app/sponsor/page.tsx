@@ -2,31 +2,43 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
 
 export default function SponsorPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [logoPreview, setLogoPreview] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    logoUrl: '',
+    targetUrl: '',
+    email: '',
+  })
+
+  const handleLogoUrlChange = (url: string) => {
+    setFormData({ ...formData, logoUrl: url })
+    // Validate URL before setting preview
+    try {
+      new URL(url)
+      setLogoPreview(url)
+    } catch {
+      setLogoPreview('')
+    }
+  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const formData = new FormData(e.currentTarget)
-    const data = {
-      name: formData.get('name') as string,
-      description: formData.get('description') as string,
-      logoUrl: formData.get('logoUrl') as string,
-      targetUrl: formData.get('targetUrl') as string,
-      email: formData.get('email') as string,
-    }
-
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       })
 
       const result = await res.json()
@@ -45,157 +57,268 @@ export default function SponsorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
-            Become a Sponsor
-          </h1>
-          <p className="text-lg text-slate-600">
-            Reach thousands of developers discovering their next open source contribution
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Back button */}
+      <div className="max-w-6xl mx-auto px-4 pt-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to home
+        </Link>
+      </div>
 
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-2">
-                Company/Brand Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="Acme Inc."
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-semibold text-slate-900 mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={3}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                placeholder="Brief description of your company (optional)"
-              />
-            </div>
-
-            {/* Logo URL */}
-            <div>
-              <label htmlFor="logoUrl" className="block text-sm font-semibold text-slate-900 mb-2">
-                Logo URL <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="url"
-                id="logoUrl"
-                name="logoUrl"
-                required
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="https://example.com/logo.png"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                URL to your company logo (PNG, JPG, or SVG recommended)
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Left Column - Form */}
+          <div>
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4 leading-tight">
+                Become a Sponsor
+              </h1>
+              <p className="text-lg text-slate-600 leading-relaxed">
+                Reach thousands of developers discovering their next open source contribution
               </p>
             </div>
 
-            {/* Target URL */}
-            <div>
-              <label htmlFor="targetUrl" className="block text-sm font-semibold text-slate-900 mb-2">
-                Target URL <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="url"
-                id="targetUrl"
-                name="targetUrl"
-                required
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="https://example.com"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Where should the sponsor card link to?
-              </p>
-            </div>
+            {/* Form Card */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name */}
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-2">
+                    Company/Brand Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    placeholder="Acme Inc."
+                  />
+                </div>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="your@email.com"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                For payment receipt and communication
-              </p>
-            </div>
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="block text-sm font-semibold text-slate-900 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none bg-white"
+                    placeholder="Brief description of your company (optional)"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Shown on hover - keep it concise
+                  </p>
+                </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-sm text-red-800">{error}</p>
+                {/* Logo URL */}
+                <div>
+                  <label htmlFor="logoUrl" className="block text-sm font-semibold text-slate-900 mb-2">
+                    Logo URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    id="logoUrl"
+                    value={formData.logoUrl}
+                    onChange={(e) => handleLogoUrlChange(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    placeholder="https://example.com/logo.png"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Square logos work best (PNG, JPG, or SVG)
+                  </p>
+                </div>
+
+                {/* Target URL */}
+                <div>
+                  <label htmlFor="targetUrl" className="block text-sm font-semibold text-slate-900 mb-2">
+                    Target URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    id="targetUrl"
+                    value={formData.targetUrl}
+                    onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    placeholder="https://example.com"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Where should visitors go when they click your sponsor card?
+                  </p>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                    placeholder="your@email.com"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    For payment receipt and updates
+                  </p>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 px-6 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Redirecting to payment...
+                    </span>
+                  ) : (
+                    'Continue to Payment'
+                  )}
+                </button>
+
+                {/* Info */}
+                <p className="text-xs text-slate-500 text-center">
+                  Secure payment powered by <span className="font-semibold">Stripe</span>
+                </p>
+              </form>
+            </div>
+          </div>
+
+          {/* Right Column - Preview & Info */}
+          <div className="lg:sticky lg:top-8 space-y-6">
+            {/* Live Preview */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Live Preview</h3>
+              <div className="space-y-4">
+                {/* Sponsor Card Preview */}
+                <div className="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 rounded-xl border border-indigo-200/60">
+                  <div className="flex items-center gap-4">
+                    {logoPreview ? (
+                      <div className="w-16 h-16 flex-shrink-0 bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                        <Image
+                          src={logoPreview}
+                          alt={formData.name || 'Logo preview'}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-contain"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 flex-shrink-0 bg-slate-200 rounded-xl flex items-center justify-center">
+                        <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-slate-900 truncate">
+                        {formData.name || 'Your Company Name'}
+                      </h4>
+                      <p className="text-sm text-slate-600 line-clamp-2">
+                        {formData.description || 'Your company description will appear here'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 text-center">
+                  This is how your sponsor card will appear on the site
+                </p>
               </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-            >
-              {loading ? 'Redirecting to payment...' : 'Continue to Payment'}
-            </button>
-
-            {/* Info */}
-            <p className="text-xs text-slate-500 text-center">
-              You will be redirected to Stripe for secure payment processing
-            </p>
-          </form>
-        </div>
-
-        {/* Benefits */}
-        <div className="mt-8 grid sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
             </div>
-            <h3 className="font-semibold text-slate-900 mb-1">Desktop Sidebars</h3>
-            <p className="text-xs text-slate-600">Rotating slots on left & right</p>
-          </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
+            {/* What's Included */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">What's Included</h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">30-day sponsorship</p>
+                    <p className="text-xs text-slate-600">Your brand visible for a full month</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Desktop & mobile placement</p>
+                    <p className="text-xs text-slate-600">Sidebars on desktop, banners on mobile</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Fair rotation system</p>
+                    <p className="text-xs text-slate-600">Equal visibility with all sponsors</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Developer audience</p>
+                    <p className="text-xs text-slate-600">Reach engaged open source contributors</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h3 className="font-semibold text-slate-900 mb-1">Mobile Banners</h3>
-            <p className="text-xs text-slate-600">Top & bottom placements</p>
-          </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            {/* Trust Signals */}
+            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl border border-indigo-200/60 p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <h4 className="font-semibold text-slate-900">Secure & Simple</h4>
+              </div>
+              <p className="text-sm text-slate-600">
+                Payments processed securely through Stripe. Your sponsorship activates immediately after payment.
+              </p>
             </div>
-            <h3 className="font-semibold text-slate-900 mb-1">Fair Rotation</h3>
-            <p className="text-xs text-slate-600">Equal visibility every 10s</p>
           </div>
         </div>
       </div>
