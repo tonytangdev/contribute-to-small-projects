@@ -38,15 +38,15 @@ async function getSponsorStats() {
     });
     return {
       activeCount,
-      availableSpots: 10 - activeCount,
-      maxSpots: 10,
+      availableSpots: 20 - activeCount,
+      maxSpots: 20,
     };
   } catch (error) {
     console.error("Error fetching sponsor stats:", error);
     return {
       activeCount: 0,
-      availableSpots: 10,
-      maxSpots: 10,
+      availableSpots: 20,
+      maxSpots: 20,
     };
   }
 }
