@@ -217,20 +217,17 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
             <div className="relative">
               <h3 className="text-2xl font-bold text-white mb-3">Ready to Get Started?</h3>
               <p className="text-slate-300 mb-6 max-w-md mx-auto">
-                Contact us to secure your sponsor spot and start reaching developers today
+                Secure your sponsor spot and start reaching developers today
               </p>
               <a
-                href="mailto:contact@contribute-to-small-projects.com?subject=Sponsorship Inquiry"
+                href="/sponsor"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-slate-900 font-semibold rounded-xl hover:bg-slate-100 hover:shadow-2xl hover:scale-105 transition-all duration-200 shadow-lg"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Contact Us
+                Become a Sponsor
               </a>
-              <p className="text-xs text-slate-400 mt-4">
-                Payment integration coming soon
-              </p>
             </div>
           </div>
         </div>

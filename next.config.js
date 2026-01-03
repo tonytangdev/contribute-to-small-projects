@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'via.placeholder.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**', // Allow all HTTPS hosts for sponsor logos
+      },
     ],
   },
 };
