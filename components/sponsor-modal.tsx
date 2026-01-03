@@ -65,7 +65,7 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
             Sponsor This Platform
           </h2>
           <p className="text-slate-600 mb-6">
-            Reach developers looking for their next open source contribution
+            Reach developers looking for their next open source contribution. Sponsorships run for 1 month.
           </p>
 
           {/* Availability */}
