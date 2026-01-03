@@ -10,4 +10,6 @@ export interface Sponsor {
   endDate: string
   createdAt: string
   updatedAt: string
+  email: string | null
+  stripeSessionId: string | null
 }
