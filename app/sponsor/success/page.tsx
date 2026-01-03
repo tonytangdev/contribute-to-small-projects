@@ -41,7 +41,7 @@ export default function SuccessPage() {
               <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              You'll receive a payment receipt via email
+              You&apos;ll receive a payment receipt via email
             </li>
           </ul>
         </div>

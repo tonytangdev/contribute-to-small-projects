@@ -1,12 +1,10 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import SponsorCard from '@/components/sponsor-card'
 
 export default function SponsorPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [logoPreview, setLogoPreview] = useState('')
