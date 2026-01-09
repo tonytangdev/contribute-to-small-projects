@@ -2,15 +2,19 @@
 
 import { filterByLanguage } from '@/app/actions'
 import { useRef, useTransition } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface LanguageSelectProps {
   languages: string[]
-  selectedLanguage?: string
 }
 
-export default function LanguageSelect({ languages, selectedLanguage }: LanguageSelectProps) {
+export default function LanguageSelect({ languages }: LanguageSelectProps) {
   const formRef = useRef<HTMLFormElement>(null)
   const [isPending, startTransition] = useTransition()
+  const pathname = usePathname()
+
+  // Extract language from pathname (e.g., /TypeScript -> TypeScript)
+  const selectedLanguage = pathname.split('/').filter(Boolean)[0] || ''
 
   const handleChange = () => {
     startTransition(() => {
@@ -24,11 +28,11 @@ export default function LanguageSelect({ languages, selectedLanguage }: Language
         Filter by language:
       </label>
       <div className="relative">
-        <select 
+        <select
           name="language"
           id="language-filter"
           className="appearance-none bg-white/80 backdrop-blur-sm border-2 border-slate-200 rounded-xl px-6 py-3 pr-12 text-slate-700 font-medium shadow-sm hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          defaultValue={selectedLanguage || ''}
+          value={selectedLanguage}
           onChange={handleChange}
           disabled={isPending}
         >

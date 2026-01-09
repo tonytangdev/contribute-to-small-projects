@@ -19,28 +19,36 @@ export async function filterByLanguage(formData: FormData) {
 
   // Reset to page 1 when changing filter
   params.delete('page')
+  params.delete('language')
 
   if (language) {
-    params.set('language', language)
+    redirect(`/${language}${params.toString() ? `?${params.toString()}` : ''}`)
   } else {
-    params.delete('language')
+    redirect(`/${params.toString() ? `?${params.toString()}` : ''}`)
   }
-
-  redirect(`/?${params.toString()}`)
 }
 
 export async function searchRepositories(formData: FormData) {
   const search = formData.get('search') as string
-  const params = await getCurrentParams()
+  const headersList = await headers()
+  const referer = headersList.get('referer')
 
   // Reset to page 1 when changing search
-  params.delete('page')
-
+  const params = new URLSearchParams()
   if (search && search.trim()) {
     params.set('search', search.trim())
-  } else {
-    params.delete('search')
   }
 
-  redirect(`/?${params.toString()}`)
+  // Preserve current language from path
+  if (referer) {
+    const url = new URL(referer)
+    const pathParts = url.pathname.split('/').filter(Boolean)
+    if (pathParts.length > 0 && pathParts[0] !== 'page') {
+      // First path segment is language
+      redirect(`/${pathParts[0]}${params.toString() ? `?${params.toString()}` : ''}`)
+      return
+    }
+  }
+
+  redirect(`/${params.toString() ? `?${params.toString()}` : ''}`)
 }

@@ -58,7 +58,9 @@ export default function PaginationPreloader({
         await response.json()
         
         // Also prefetch the Next.js page
-        const pageUrl = `/?page=${pageNum}${selectedLanguage ? `&language=${selectedLanguage}` : ''}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`
+        const pageUrl = selectedLanguage
+          ? `/${selectedLanguage}?page=${pageNum}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`
+          : `/?page=${pageNum}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`
         router.prefetch(pageUrl)
         
         console.log(`✅ Preloaded page ${pageNum}`)

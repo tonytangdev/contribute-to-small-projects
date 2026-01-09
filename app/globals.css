@@ -25,15 +25,8 @@ body {
 }
 
 body {
-    background: linear-gradient(to bottom right, #f8fafc, #eff6ff, #e0e7ff);
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background: linear-gradient(to bottom right, #0f172a, #1e1b4b, #312e81);
-    }
 }
 
 @keyframes fadeIn {

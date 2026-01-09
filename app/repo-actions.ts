@@ -34,8 +34,6 @@ export async function getRepositories(
   search?: string
 ): Promise<RepositoryResponse> {
   try {
-    console.log('[ServerAction] Fetching repositories:', { page, language, search })
-
     const limit = 25
     const validPage = Math.max(1, page)
     const skip = (validPage - 1) * limit
@@ -67,11 +65,8 @@ export async function getRepositories(
       ]
     }
 
-    console.log('[ServerAction] Where clause:', JSON.stringify(whereClause, null, 2))
-
     // Get total count
     const totalCount = await prisma.repository.count({ where: whereClause })
-    console.log('[ServerAction] Total count:', totalCount)
 
     // Get repositories
     const repositories = await prisma.repository.findMany({
@@ -83,8 +78,6 @@ export async function getRepositories(
         { stars: 'desc' }
       ]
     })
-
-    console.log('[ServerAction] Found repositories:', repositories.length)
 
     const totalPages = Math.ceil(totalCount / limit)
     const hasNextPage = validPage < totalPages
