@@ -96,46 +96,76 @@ interface RepositoryResponse {
 
 async function getRepositories(page = 1, language?: string, search?: string): Promise<RepositoryResponse> {
   try {
-    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000'
+    console.log('[Page] Fetching repositories:', { page, language, search })
 
-    console.log('[Page] Base URL:', baseUrl)
+    // Call database directly to avoid Cloudflare blocking SSR requests
+    const { prisma } = await import('@/lib/db')
 
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: '25'
-    })
+    const limit = 25
+    const validPage = Math.max(1, page)
+    const skip = (validPage - 1) * limit
+
+    // Calculate date 1 week ago
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+
+    // Build where clause for filtering
+    const whereClause: {
+      language?: string;
+      lastUpdated?: { gte: Date };
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      lastUpdated: { gte: oneWeekAgo }
+    }
 
     if (language) {
-      params.set('language', language)
+      whereClause.language = language
     }
 
     if (search) {
-      params.set('search', search)
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ]
     }
 
-    const url = `${baseUrl}/api/repos?${params}`
-    console.log('[Page] Fetching:', url)
+    console.log('[Page] Where clause:', JSON.stringify(whereClause, null, 2))
 
-    const response = await fetch(url, {
-      next: { revalidate: 300 } // Revalidate every 5 minutes
+    // Get total count
+    const totalCount = await prisma.repository.count({ where: whereClause })
+    console.log('[Page] Total count:', totalCount)
+
+    // Get repositories
+    const repositories = await prisma.repository.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      orderBy: [
+        { lastUpdated: 'desc' },
+        { stars: 'desc' }
+      ]
     })
 
-    console.log('[Page] Response status:', response.status)
+    console.log('[Page] Found repositories:', repositories.length)
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[Page] Response not OK:', errorText)
-      throw new Error('Failed to fetch repositories')
+    const totalPages = Math.ceil(totalCount / limit)
+    const hasNextPage = validPage < totalPages
+    const hasPrevPage = validPage > 1
+
+    return {
+      repositories,
+      pagination: {
+        currentPage: validPage,
+        totalPages,
+        totalCount,
+        limit,
+        hasNextPage,
+        hasPrevPage
+      }
     }
-
-    const data = await response.json()
-    console.log('[Page] Data received, repo count:', data.repositories?.length)
-
-    return data
   } catch (error) {
     console.error('[Page] Error fetching repositories:', error)
     console.error('[Page] Error details:', {
@@ -158,21 +188,17 @@ async function getRepositories(page = 1, language?: string, search?: string): Pr
 
 async function getLanguages(): Promise<string[]> {
   try {
-    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
-      : process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000'
-    
-    const response = await fetch(`${baseUrl}/api/languages`, {
-      next: { revalidate: 3600 } // Revalidate every 1 hour
+    // Call database directly to avoid Cloudflare blocking SSR requests
+    const { prisma } = await import('@/lib/db')
+
+    const result = await prisma.repository.findMany({
+      select: { language: true },
+      where: { language: { not: null } },
+      distinct: ['language'],
+      orderBy: { language: 'asc' }
     })
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch languages')
-    }
-    
-    return response.json()
+
+    return result.map(r => r.language).filter((lang): lang is string => lang !== null)
   } catch (error) {
     console.error('Error fetching languages:', error)
     return []
