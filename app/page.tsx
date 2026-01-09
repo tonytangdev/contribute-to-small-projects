@@ -96,36 +96,52 @@ interface RepositoryResponse {
 
 async function getRepositories(page = 1, language?: string, search?: string): Promise<RepositoryResponse> {
   try {
-    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` 
-      : process.env.VERCEL_URL 
+    const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
         : 'http://localhost:3000'
-    
+
+    console.log('[Page] Base URL:', baseUrl)
+
     const params = new URLSearchParams({
       page: page.toString(),
       limit: '25'
     })
-    
+
     if (language) {
       params.set('language', language)
     }
-    
+
     if (search) {
       params.set('search', search)
     }
-    
-    const response = await fetch(`${baseUrl}/api/repos?${params}`, {
+
+    const url = `${baseUrl}/api/repos?${params}`
+    console.log('[Page] Fetching:', url)
+
+    const response = await fetch(url, {
       next: { revalidate: 300 } // Revalidate every 5 minutes
     })
-    
+
+    console.log('[Page] Response status:', response.status)
+
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[Page] Response not OK:', errorText)
       throw new Error('Failed to fetch repositories')
     }
-    
-    return response.json()
+
+    const data = await response.json()
+    console.log('[Page] Data received, repo count:', data.repositories?.length)
+
+    return data
   } catch (error) {
-    console.error('Error fetching repositories:', error)
+    console.error('[Page] Error fetching repositories:', error)
+    console.error('[Page] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return {
       repositories: [],
       pagination: {
