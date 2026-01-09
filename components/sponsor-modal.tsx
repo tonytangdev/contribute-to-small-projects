@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface SponsorStats {
   activeCount: number
@@ -82,12 +83,12 @@ export default function SponsorModal({ isOpen, onClose, stats }: SponsorModalPro
           </div>
 
           {/* CTA */}
-          <a
+          <Link
             href="/sponsor"
             className="block w-full py-3 px-4 bg-indigo-600 text-white text-center font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
           >
             Become a Sponsor
-          </a>
+          </Link>
         </div>
       </div>
     </div>

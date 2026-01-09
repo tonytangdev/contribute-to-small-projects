@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { getRepositories } from '@/app/repo-actions'
 
 interface PaginationPreloaderProps {
   currentPage: number
@@ -24,54 +25,30 @@ export default function PaginationPreloader({
 
   const preloadNextPage = useCallback(async (pageNum: number) => {
     if (preloadedPages.current.has(pageNum)) return
-    
+
     try {
       preloadedPages.current.add(pageNum)
-      
+
       // Dispatch preload start event
       window.dispatchEvent(new CustomEvent('preload-start'))
-      
-      // Build URL for API call
-      const params = new URLSearchParams({
-        page: pageNum.toString(),
-        limit: '25'
-      })
-      
-      if (selectedLanguage) {
-        params.set('language', selectedLanguage)
-      }
-      
-      if (searchTerm) {
-        params.set('search', searchTerm)
-      }
-      
-      // Preload the API data
-      const response = await fetch(`/api/repos?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (response.ok) {
-        // Store in cache for faster access
-        await response.json()
-        
-        // Also prefetch the Next.js page
-        const pageUrl = selectedLanguage
-          ? `/${selectedLanguage}?page=${pageNum}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`
-          : `/?page=${pageNum}${searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ''}`
-        router.prefetch(pageUrl)
-        
-        console.log(`✅ Preloaded page ${pageNum}`)
-        
-        // Dispatch preload end event
-        window.dispatchEvent(new CustomEvent('preload-end'))
-      }
+
+      // Preload data using server action
+      await getRepositories(pageNum, selectedLanguage, searchTerm)
+
+      // Prefetch the Next.js page route
+      const pageUrl = selectedLanguage
+        ? (pageNum === 1 ? `/${selectedLanguage}${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}` : `/${selectedLanguage}/page/${pageNum}${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`)
+        : (pageNum === 1 ? `/${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}` : `/page/${pageNum}${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`)
+      router.prefetch(pageUrl)
+
+      console.log(`✅ Preloaded page ${pageNum}`)
+
+      // Dispatch preload end event
+      window.dispatchEvent(new CustomEvent('preload-end'))
     } catch (error) {
       console.log(`❌ Failed to preload page ${pageNum}:`, error)
       preloadedPages.current.delete(pageNum)
-      
+
       // Dispatch preload end event even on error
       window.dispatchEvent(new CustomEvent('preload-end'))
     }

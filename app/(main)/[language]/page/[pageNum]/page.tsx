@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import RepoCard from '@/components/repo-card'
 import PaginationPreloader from '@/components/pagination-preloader'
 import PreloadIndicator from '@/components/preload-indicator'
@@ -7,23 +8,33 @@ import { getRepositories } from '@/app/repo-actions'
 
 export const revalidate = 300
 
-export async function generateMetadata({ searchParams }: HomeProps): Promise<Metadata> {
-  const params = await searchParams
-  const search = params.search
+export async function generateMetadata({ params, searchParams }: LanguagePageProps): Promise<Metadata> {
+  const { language, pageNum } = await params
+  const page = parseInt(pageNum, 10)
+  const search = (await searchParams).search
 
-  let title = 'Contribute to Small Projects'
-  let description = 'Discover small open source projects (100-600 stars) perfect for your first contributions'
+  let title = `${language} Projects - Page ${page}`
+  let description = `Discover more ${language} open source projects (100-600 stars) - page ${page}`
 
   if (search) {
-    title = `Projects matching "${search}"`
-    description = `Browse open source projects matching "${search}" with 100-600 stars - ideal for beginner contributions`
+    title = `${language} Projects matching "${search}" - Page ${page}`
+    description = `Browse ${language} open source projects matching "${search}" with 100-600 stars - page ${page}`
   }
 
-  const url = new URL('https://www.contribute-to-small-projects.com')
+  const url = new URL(`https://www.contribute-to-small-projects.com/${language}/page/${page}`)
   if (search) url.searchParams.set('search', search)
 
+  const baseUrl = 'https://www.contribute-to-small-projects.com'
   const alternates: Metadata['alternates'] = {
     canonical: url.toString(),
+  }
+
+  if (page > 1) {
+    const prevUrl = page === 2
+      ? new URL(`${baseUrl}/${language}`)
+      : new URL(`${baseUrl}/${language}/page/${page - 1}`)
+    if (search) prevUrl.searchParams.set('search', search)
+    alternates.types = { ...alternates.types, 'prev': prevUrl.toString() }
   }
 
   return {
@@ -42,20 +53,41 @@ export async function generateMetadata({ searchParams }: HomeProps): Promise<Met
   }
 }
 
-interface HomeProps {
+interface LanguagePageProps {
+  params: Promise<{ language: string; pageNum: string }>
   searchParams: Promise<{ search?: string }>
 }
 
-export default async function Home({ searchParams }: HomeProps) {
-  const params = await searchParams
-  const searchTerm = params.search
-  const data = await getRepositories(1, undefined, searchTerm)
+export default async function LanguagePaginatedPage({ params, searchParams }: LanguagePageProps) {
+  const { language, pageNum } = await params
+  const currentPage = parseInt(pageNum, 10)
+
+  // Validate page number
+  if (isNaN(currentPage) || currentPage < 1 || currentPage > 99999) {
+    redirect(`/${language}`)
+  }
+
+  // Redirect page 1 to language home
+  if (currentPage === 1) {
+    const search = (await searchParams).search
+    redirect(search ? `/${language}?search=${encodeURIComponent(search)}` : `/${language}`)
+  }
+
+  const searchTerm = (await searchParams).search
+  const data = await getRepositories(currentPage, language, searchTerm)
   const { repositories, pagination } = data
+
+  // Redirect if page is beyond total pages
+  if (currentPage > pagination.totalPages && pagination.totalPages > 0) {
+    redirect(`/${language}`)
+  }
 
   const baseUrl = 'https://www.contribute-to-small-projects.com'
 
   const breadcrumbItems = [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl }
+    { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl },
+    { '@type': 'ListItem', position: 2, name: language, item: `${baseUrl}/${encodeURIComponent(language)}` },
+    { '@type': 'ListItem', position: 3, name: `Page ${currentPage}`, item: `${baseUrl}/${encodeURIComponent(language)}/page/${currentPage}` }
   ]
 
   const structuredData = {
@@ -72,7 +104,7 @@ export default async function Home({ searchParams }: HomeProps) {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: `${baseUrl}/?search={search_term_string}`
+            urlTemplate: `${baseUrl}/${language}?search={search_term_string}`
           },
           'query-input': 'required name=search_term_string'
         }
@@ -125,8 +157,8 @@ export default async function Home({ searchParams }: HomeProps) {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-3">No repositories found</h3>
-            <p className="text-slate-600 mb-2">The database might be empty.</p>
-            <p className="text-slate-500 text-sm">Repositories will be automatically fetched daily via cron job.</p>
+            <p className="text-slate-600 mb-2">No {language} repositories matching your criteria.</p>
+            <p className="text-slate-500 text-sm">Try adjusting your search or check back later.</p>
           </div>
         </div>
       ) : (
@@ -135,6 +167,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="inline-block bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl px-8 py-4">
               <p className="text-slate-700 font-medium text-lg">
                 Showing <span className="font-bold text-indigo-600">{repositories.length}</span> of <span className="font-bold">{pagination.totalCount.toLocaleString()}</span> repositories
+                {' '}for <span className="font-bold text-indigo-600">{language}</span>
                 {searchTerm && (
                   <>
                     {' '}matching &ldquo;<span className="font-bold text-indigo-600">{searchTerm}</span>&rdquo;
@@ -157,17 +190,34 @@ export default async function Home({ searchParams }: HomeProps) {
             currentPage={pagination.currentPage}
             totalPages={pagination.totalPages}
             hasNextPage={pagination.hasNextPage}
+            selectedLanguage={language}
             searchTerm={searchTerm}
           />
 
           <nav aria-label="Pagination" className="flex justify-center items-center gap-3 sm:gap-6 mt-12 sm:mt-16 relative">
-            <div aria-disabled="true" className="flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl cursor-not-allowed font-semibold text-sm sm:text-base">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="hidden sm:inline">Previous</span>
-              <span className="sm:hidden">Prev</span>
-            </div>
+            {pagination.hasPrevPage ? (
+              <Link
+                href={currentPage === 2
+                  ? `/${language}${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`
+                  : `/${language}/page/${pagination.currentPage - 1}${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`}
+                prefetch={true}
+                className="group flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-700 rounded-xl sm:rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-sm text-sm sm:text-base"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
+              </Link>
+            ) : (
+              <div aria-disabled="true" className="flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl cursor-not-allowed font-semibold text-sm sm:text-base">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-1 sm:gap-2">
               <span aria-current="page" className="px-3 py-2 sm:px-6 sm:py-4 bg-indigo-100 text-indigo-800 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-lg border-2 border-indigo-200">
@@ -181,7 +231,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
             {pagination.hasNextPage ? (
               <Link
-                href={`/page/2${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`}
+                href={`/${language}/page/${pagination.currentPage + 1}${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`}
                 prefetch={true}
                 className="group flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-8 sm:py-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200 text-slate-700 rounded-xl sm:rounded-2xl hover:bg-indigo-50 hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-sm text-sm sm:text-base"
               >

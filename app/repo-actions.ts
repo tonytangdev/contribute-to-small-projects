@@ -83,8 +83,14 @@ export async function getRepositories(
     const hasNextPage = validPage < totalPages
     const hasPrevPage = validPage > 1
 
+    // Transform repositories to match the interface (convert Date to string)
+    const transformedRepositories: Repository[] = repositories.map(repo => ({
+      ...repo,
+      lastUpdated: repo.lastUpdated.toISOString()
+    }))
+
     return {
-      repositories,
+      repositories: transformedRepositories,
       pagination: {
         currentPage: validPage,
         totalPages,
