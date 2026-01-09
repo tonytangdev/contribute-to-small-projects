@@ -67,11 +67,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ viewTransitionName: 'root' }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div style={{
+          animation: 'fadeIn 0.2s ease-in',
+          viewTransitionName: 'main-content'
+        }}>
+          {children}
+        </div>
       </body>
     </html>
   );
